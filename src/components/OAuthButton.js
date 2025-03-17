@@ -1,4 +1,5 @@
 import React from 'react';
+import GoogleButton from 'react-google-button';
 
 function OAuthButton() {
   const isLocal = process.env.NODE_ENV === 'development';
@@ -6,7 +7,11 @@ function OAuthButton() {
 
   return (
     <div>
-      <a href={oauthUrl}>Login with Google</a>
+      <GoogleButton
+        onClick={() => {
+          window.location.href = oauthUrl;
+        }}
+      />
     </div>
   );
 }
