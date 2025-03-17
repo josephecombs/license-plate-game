@@ -68,3 +68,15 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Starting Wrangler
+
+To start the Cloudflare Worker using Wrangler, ensure you are in the root directory of the project. Use the following command:
+
+```bash
+wrangler dev
+```
+
+This will start the local development server using Miniflare, allowing you to test your Worker locally at `http://localhost:8787`.
+
+Make sure that your `wrangler.jsonc` is correctly configured with the appropriate entry-point and other necessary settings.
