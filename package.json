@@ -14,12 +14,12 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "react-scripts start && wrangler dev cloudflare-oauth-worker/src/index.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build --cname www.platechase.com"
+    "deploy": "gh-pages -d build --cname www.platechase.com && (cd cloudflare-oauth-worker && wrangler publish)"
   },
   "homepage": "https://www.platechase.com",
   "eslintConfig": {
