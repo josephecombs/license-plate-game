@@ -25,17 +25,24 @@ export class UserSession {
 export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
+		console.log('Received request at:', url.pathname);
 		if (url.pathname === '/sessions/new') {
-			return new Response('<html><body><a href="https://accounts.google.com/o/oauth2/auth?client_id=' + env.GOOGLE_OAUTH_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(url.origin + '/oauth2/callback') + '&response_type=code&scope=email profile">Login with Google</a></body></html>', {
-				headers: { 'Content-Type': 'text/html' },
-			});
-		} else if (url.pathname === '/oauth2/callback') {
 			const code = url.searchParams.get('code');
 			if (!code) {
-				return new Response('Missing code', { status: 400 });
+				// Redirect to Google's OAuth consent screen
+				return Response.redirect(
+					`https://accounts.google.com/o/oauth2/auth?client_id=${env.GOOGLE_OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(url.origin + '/sessions/new')}&response_type=code&scope=email profile`,
+					302
+				);
 			}
 
+			console.log('Authorization code:', code);
+
 			// Exchange code for tokens
+
+			console.log('Client ID:', env.GOOGLE_OAUTH_CLIENT_ID);
+			console.log('Client Secret:', env.GOOGLE_OAUTH_CLIENT_SECRET);
+
 			const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -43,35 +50,54 @@ export default {
 					code,
 					client_id: env.GOOGLE_OAUTH_CLIENT_ID,
 					client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-					redirect_uri: url.origin + '/oauth2/callback',
+					redirect_uri: url.origin + '/sessions/new',
 					grant_type: 'authorization_code',
 				}),
 			});
 
 			const tokenData = await tokenResponse.json();
+			console.log('Token data:', tokenData);
 			if (!tokenResponse.ok) {
+				console.error('Error exchanging code:', tokenData);
 				return new Response('Failed to exchange code: ' + tokenData.error, { status: 400 });
 			}
 
-			// Fetch user info
+			// Fetch user info using the access token
 			const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
 				headers: { Authorization: `Bearer ${tokenData.access_token}` },
 			});
 
 			const userInfo = await userInfoResponse.json();
+			console.log('User info:', userInfo);
 			if (!userInfoResponse.ok) {
-				return new Response('Failed to fetch user info', { status: 400 });
+				return new Response('Failed to fetch user info', { status: 500 });
 			}
 
-			// Store user info in Durable Object
-			const id = env.USER_SESSIONS.idFromName(userInfo.id);
-			const obj = env.USER_SESSIONS.get(id);
-			await obj.fetch(new Request('https://store', {
-				method: 'POST',
-				body: JSON.stringify(userInfo),
-			}));
+			// Store user info and tokens in Durable Object
+			const userSession = new UserSession(ctx.state, env);
+			await userSession.state.storage.put('user', {
+				tokens: tokenData,
+				userInfo: {
+					firstName: userInfo.given_name,
+					lastName: userInfo.family_name,
+					email: userInfo.email
+				}
+			});
 
-			return new Response('User info stored successfully');
+			// Redirect to client with session information
+			return Response.redirect('http://localhost:3000', 302);
+		} else if (url.pathname === '/debug/state') {
+			// const id = env.USER_SESSIONS.idFromName('unique-session-id');
+			// const obj = env.USER_SESSIONS.get(id);
+			// const state = await obj.fetch(new Request('https://state'));
+
+			// const userSession = new UserSession(state, env);
+			// const state = await userSession.state.storage.list();
+			const id = env.USER_SESSIONS.idFromName('unique-session-id');
+			const obj = env.USER_SESSIONS.get(id);
+			const state = await obj.fetch(new Request('https://state'));
+			return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+			// return new Response(JSON.stringify(ctx.state), { headers: { 'Content-Type': 'application/json' } });
 		}
 		return new Response('Hello World!');
 	},
