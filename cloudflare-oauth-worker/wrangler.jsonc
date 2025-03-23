@@ -15,7 +15,9 @@
 			{
 				"name": "USER_SESSIONS",
 				"class_name": "UserSession"
-			}
+			},
+			{ "name": "USER", "class_name": "User" },
+			{ "name": "GAME", "class_name": "Game" }
 		]
 	},
 	"migrations": [
@@ -24,6 +26,10 @@
 			"new_classes": [
 				"UserSession"
 			]
+		},
+		{
+			"tag": "v1",
+			"new_classes": ["User", "Game"]
 		}
 	]
 	/**

@@ -8,7 +8,33 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-// Define the UserSession class
+// Define the User Durable Object
+export class User {
+	constructor(state, env) {
+		this.state = state;
+		this.env = env;
+	}
+
+	async fetch(request) {
+		const userData = await this.state.storage.get('user');
+		return new Response(JSON.stringify(userData), { headers: { 'Content-Type': 'application/json' } });
+	}
+}
+
+// Define the Game Durable Object
+export class Game {
+	constructor(state, env) {
+		this.state = state;
+		this.env = env;
+	}
+
+	async fetch(request) {
+		// Handle game state management
+		return new Response('Game state handling');
+	}
+}
+
+// Define the UserSession Durable Object
 export class UserSession {
 	constructor(state, env) {
 		this.state = state;
@@ -16,12 +42,12 @@ export class UserSession {
 	}
 
 	async fetch(request) {
-		// Handle requests to manage user sessions
-		return new Response('User session handling');
+		// Handle game state management
+		return new Response('UserSession state handling');
 	}
 }
 
-// Export the default fetch handler
+// Update OAuth flow to store user info in User Durable Object
 export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
@@ -73,19 +99,25 @@ export default {
 				return new Response('Failed to fetch user info', { status: 500 });
 			}
 
-			// Store user info and tokens in Durable Object
-			const userSession = new UserSession(ctx.state, env);
-			await userSession.state.storage.put('user', {
-				tokens: tokenData,
-				userInfo: {
-					firstName: userInfo.given_name,
-					lastName: userInfo.family_name,
-					email: userInfo.email
-				}
-			});
+			const userId = userInfo.email;
+			const userObjId = env.USER.idFromName(userId);
+			const userObj = env.USER.get(userObjId);
+			await userObj.fetch(new Request('https://store-user', {
+				method: 'POST',
+				body: JSON.stringify({ tokens: tokenData, userInfo }),
+			}));
 
-			// Redirect to client with session information
-			return Response.redirect('http://localhost:3000', 302);
+			// Store sessionToken securely associated with userId in Durable Object
+			await userObj.fetch(new Request('https://store-session', {
+				method: 'POST',
+				body: JSON.stringify({ sessionToken, userId }),
+			}));
+
+			// improvement needed
+			const response = Response.redirect('http://localhost:3000', 302);
+			response.headers.append('Set-Cookie', `session=${sessionToken}; HttpOnly; Secure; Path=/; SameSite=Lax`);
+
+			return response;
 		} else if (url.pathname === '/debug/state') {
 			// const id = env.USER_SESSIONS.idFromName('unique-session-id');
 			// const obj = env.USER_SESSIONS.get(id);
@@ -93,10 +125,11 @@ export default {
 
 			// const userSession = new UserSession(state, env);
 			// const state = await userSession.state.storage.list();
-			const id = env.USER_SESSIONS.idFromName('unique-session-id');
-			const obj = env.USER_SESSIONS.get(id);
-			const state = await obj.fetch(new Request('https://state'));
-			return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+			// const id = env.USER_SESSIONS.idFromName('unique-session-id');
+			// const obj = env.USER_SESSIONS.get(id);
+			// const state = await obj.fetch(new Request('https://state'));
+			debugger;
+			return new Response(JSON.stringify(Object.keys(env.USER_SESSIONS)), { headers: { 'Content-Type': 'application/json' } });
 			// return new Response(JSON.stringify(ctx.state), { headers: { 'Content-Type': 'application/json' } });
 		}
 		return new Response('Hello World!');
