@@ -8,6 +8,8 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { v4 as uuidv4 } from 'uuid';
+
 // Define the User Durable Object
 export class User {
 	constructor(state, env) {
@@ -99,6 +101,7 @@ export default {
 				return new Response('Failed to fetch user info', { status: 500 });
 			}
 
+			debugger;
 			const userId = userInfo.email;
 			const userObjId = env.USER.idFromName(userId);
 			const userObj = env.USER.get(userObjId);
@@ -107,15 +110,22 @@ export default {
 				body: JSON.stringify({ tokens: tokenData, userInfo }),
 			}));
 
+			// Generate a session token
+			const sessionToken = uuidv4();
+
 			// Store sessionToken securely associated with userId in Durable Object
 			await userObj.fetch(new Request('https://store-session', {
 				method: 'POST',
 				body: JSON.stringify({ sessionToken, userId }),
 			}));
 
-			// improvement needed
-			const response = Response.redirect('http://localhost:3000', 302);
-			response.headers.append('Set-Cookie', `session=${sessionToken}; HttpOnly; Secure; Path=/; SameSite=Lax`);
+			const response = new Response(null, {
+				status: 302,
+				headers: {
+					Location: 'http://localhost:3000',
+					'Set-Cookie': `session=${sessionToken}; HttpOnly; Secure; Path=/; SameSite=Lax`
+				}
+			});
 
 			return response;
 		} else if (url.pathname === '/debug/state') {
