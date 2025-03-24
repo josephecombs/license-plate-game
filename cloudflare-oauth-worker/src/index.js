@@ -21,7 +21,7 @@ export class User extends DurableObject {
 		const url = new URL(request.url);
 		if (url.hostname === 'store-user' && request.method === 'POST') {
 			const data = await request.json();
-			await this.ctx.storage.put('user', data);
+			await this.ctx.storage.put('user', data.userInfo);
 			return new Response('User stored successfully');
 		} else if (url.hostname === 'get-user' && request.method === 'GET') {
 			const userData = await this.ctx.storage.get('user');
@@ -138,7 +138,7 @@ export default {
 			const userObj = env.USER.get(userObjId);
 			await userObj.fetch(new Request('https://store-user', {
 				method: 'POST',
-				body: JSON.stringify({ tokens: tokenData, userInfo }),
+				body: JSON.stringify({ userInfo }),
 			}));
 
 			// Generate a session token
