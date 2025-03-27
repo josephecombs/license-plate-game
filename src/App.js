@@ -7,6 +7,7 @@ import Cookies from 'js-cookie';
 function App() {
   const [user, setUser] = useState(null);
   const sessionId = Cookies.get('session');
+  const [gameState, setGameState] = useState(null);
 
   useEffect(() => {
     if (!sessionId) {
@@ -38,6 +39,27 @@ function App() {
     })
     .catch(error => console.error('Error validating session:', error));
   }, [sessionId]); // Depend explicitly on sessionId to run when it changes
+
+  useEffect(() => {
+    if (user && sessionId) {
+      fetch('http://localhost:8787/game', {
+        method: 'GET',
+        headers: {
+          'Authorization': sessionId
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        setGameState(data);
+      })
+      .catch(error => console.error('Error fetching game state:', error));
+    }
+  }, [user, sessionId]);
 
   return (
     <div className="App">

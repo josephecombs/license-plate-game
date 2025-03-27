@@ -79,6 +79,14 @@ function setCORSHeaders(response) {
 	});
 }
 
+async function getEmailFromSessionToken(sessionToken, env) {
+	const userSessionId = env.USER_SESSIONS.idFromName(sessionToken);
+	const userSessionObj = env.USER_SESSIONS.get(userSessionId);
+	const sessionResponse = await userSessionObj.fetch(new Request('https://get-user-session'));
+	const sessionData = await sessionResponse.json();
+	return sessionData.email;
+}
+
 // Update OAuth flow to store user info in User Durable Object
 export default {
 	async fetch(request, env, ctx) {
@@ -202,6 +210,23 @@ export default {
 				response = new Response(JSON.stringify({ valid: true, user: userData }), { headers: { 'Content-Type': 'application/json' } });
 			} else {
 				response = new Response(JSON.stringify({ valid: false }), { headers: { 'Content-Type': 'application/json' } });
+			}
+		} else if (url.pathname === '/game') {
+			// need to verify this route actually works
+			// eventually this should be made generic
+			const sessionToken = request.headers.get('Authorization');
+			if (!sessionToken) {
+				response = new Response(JSON.stringify({ error: 'No session token provided' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+			} else {
+				const email = await getEmailFromSessionToken(sessionToken, env);
+				if (email) {
+					const gameObjId = env.GAME.idFromName('game-state');
+					const gameObj = env.GAME.get(gameObjId);
+					const gameResponse = await gameObj.fetch(request);
+					response = gameResponse;
+				} else {
+					response = new Response(JSON.stringify({ error: 'Invalid session token' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+				}
 			}
 		} else {
 			response = new Response('Hello World!');
