@@ -39,8 +39,21 @@ export class Game extends DurableObject {
 	}
 
 	async fetch(request) {
-		// Handle game state management
-		return new Response('Game state handling');
+		const url = new URL(request.url);
+		const { email, gameState } = await request.json();
+
+		let gameData = await this.ctx.storage.get('gameData') || {};
+
+		if (url.hostname === 'save-game') {
+			gameData[email] = gameState;
+			await this.ctx.storage.put('gameData', gameData);
+			return new Response('Game state stored successfully');
+		} else if (url.hostname === 'get-game') {
+			const userGameState = gameData[email] || {};
+			return new Response(JSON.stringify(userGameState), { headers: { 'Content-Type': 'application/json' } });
+		}
+
+		return new Response('Method not allowed', { status: 405 });
 	}
 }
 
@@ -220,10 +233,24 @@ export default {
 			} else {
 				const email = await getEmailFromSessionToken(sessionToken, env);
 				if (email) {
-					const gameObjId = env.GAME.idFromName('game-state');
+					const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+					const gameObjId = env.GAME.idFromName(currentMonthYear);
 					const gameObj = env.GAME.get(gameObjId);
-					const gameResponse = await gameObj.fetch(request);
-					response = gameResponse;
+					const gameResponse = await gameObj.fetch(new Request('https://get-game', {
+						method: 'POST',
+						body: JSON.stringify({ email }),
+					}));
+
+					// gameResponse['hello'] = 'world'
+		
+					// const gameResponse = await gameObj.fetch(new Request('https://get-game', {
+					// 	method: request.method,
+					// 	body: JSON.stringify({ email, gameState: await request.json() }),
+					// 	headers: { 'Content-Type': 'application/json' }
+					// }));
+					// response = gameResponse;
+
+					response = new Response(JSON.stringify(gameResponse), { headers: { 'Content-Type': 'application/json' } });
 				} else {
 					response = new Response(JSON.stringify({ error: 'Invalid session token' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 				}
