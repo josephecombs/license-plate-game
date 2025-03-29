@@ -81,7 +81,7 @@ export class UserSession extends DurableObject {
 	}
 }
 
-function setCORSHeaders(response) {
+function setCORSHeaders(response, env, request) {
 	const newHeaders = new Headers(response.headers);
 	const allowedOrigins = env.NODE_ENV === 'production' 
 		? ['https://www.platechase.com', 'https://api.platechase.com'] 
@@ -266,6 +266,6 @@ export default {
 		} else {
 			response = new Response('Hello World!');
 		}
-		return setCORSHeaders(response);
+		return setCORSHeaders(response, env, request);
 	},
 };

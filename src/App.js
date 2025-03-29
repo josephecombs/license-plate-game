@@ -73,12 +73,28 @@ function App() {
             <Link to="/privacy-policy">Privacy Policy</Link>
             <Link to="/terms-of-service">Terms of Service</Link>
           </div>
-          {user && <div className="nav-right">Welcome back, {user.name}</div>}
+          {user && (
+            <div className="nav-right">
+              Welcome back, {user.name}
+              <Link 
+                to="/" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  Cookies.remove('session');
+                  setUser(null);
+                  window.location.reload();
+                }}
+                style={{ marginLeft: '20px', color: '#666' }}
+              >
+                Logout
+              </Link>
+            </div>
+          )}
         </nav>
         <Routes>
           <Route path="/" element={
             <header className="App-header">
-              <OAuthButton />
+              {!user && <OAuthButton />}
               <Map />
             </header>
           } />
