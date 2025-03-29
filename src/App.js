@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Map from './components/Map';
 import OAuthButton from './components/OAuthButton';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
 import './App.css';
 import Cookies from 'js-cookie';
 
@@ -38,7 +41,7 @@ function App() {
       }
     })
     .catch(error => console.error('Error validating session:', error));
-  }, [sessionId]); // Depend explicitly on sessionId to run when it changes
+  }, [sessionId]);
 
   useEffect(() => {
     if (user && sessionId) {
@@ -62,12 +65,28 @@ function App() {
   }, [user, sessionId]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <Map />
-        {user ? <p>Welcome back, {user.name}</p> : <OAuthButton />}
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <nav className="App-nav">
+          <div className="nav-left">
+            <Link to="/">Home</Link>
+            <Link to="/privacy-policy">Privacy Policy</Link>
+            <Link to="/terms-of-service">Terms of Service</Link>
+          </div>
+          {user && <div className="nav-right">Welcome back, {user.name}</div>}
+        </nav>
+        <Routes>
+          <Route path="/" element={
+            <header className="App-header">
+              <OAuthButton />
+              <Map />
+            </header>
+          } />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

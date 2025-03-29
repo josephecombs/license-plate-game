@@ -83,7 +83,13 @@ export class UserSession extends DurableObject {
 
 function setCORSHeaders(response) {
 	const newHeaders = new Headers(response.headers);
-	newHeaders.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+	const allowedOrigins = env.NODE_ENV === 'production' 
+		? ['https://www.platechase.com', 'https://api.platechase.com'] 
+		: ['http://localhost:3000'];
+	const origin = request.headers.get('Origin');
+	if (allowedOrigins.includes(origin)) {
+		newHeaders.set('Access-Control-Allow-Origin', origin);
+	}
 	newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 	newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 	return new Response(response.body, {
@@ -119,8 +125,6 @@ export default {
 
 			console.log('Authorization code:', code);
 
-			// Exchange code for tokens
-
 			console.log('Client ID:', env.GOOGLE_OAUTH_CLIENT_ID);
 			console.log('Client Secret:', env.GOOGLE_OAUTH_CLIENT_SECRET);
 
@@ -131,7 +135,9 @@ export default {
 					code,
 					client_id: env.GOOGLE_OAUTH_CLIENT_ID,
 					client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-					redirect_uri: url.origin + '/sessions/new',
+					redirect_uri: env.NODE_ENV === 'production' 
+						? 'https://www.platechase.com'
+						: url.origin + '/sessions/new',
 					grant_type: 'authorization_code',
 				}),
 			});
@@ -174,11 +180,13 @@ export default {
 				body: JSON.stringify({ 'email': userId }),
 			}));
 
+			const redirectUrl = env.NODE_ENV === 'production' ? 'https://www.platechase.com' : 'http://localhost:3000';
+
 			response = new Response(null, {
 				status: 302,
 				headers: {
-					Location: 'http://localhost:3000',
-					'Set-Cookie': `session=${sessionToken}; Path=/; Max-Age=${60 * 60 * 24 * 365 * 10}; SameSite=Lax`
+					Location: redirectUrl,
+					'Set-Cookie': `session=${sessionToken}; Path=/; ${env.NODE_ENV === 'production' ? 'Domain=.platechase.com; ' : ''}Max-Age=${60 * 60 * 24 * 365 * 10}; SameSite=Lax`
 				}
 			});
 

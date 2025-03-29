@@ -24,8 +24,89 @@
   color: white;
 }
 
+.App-nav {
+  background-color: #1a1c20;
+  padding: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.nav-left {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-right {
+  color: #888;
+  font-size: 0.9rem;
+  margin-right: 1rem;
+}
+
+.App-nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.App-nav a:hover {
+  background-color: #2a2c30;
+}
+
 .App-link {
   color: #61dafb;
+}
+
+.privacy-policy,
+.terms-of-service {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  text-align: left;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.privacy-policy h1,
+.terms-of-service h1 {
+  color: #282c34;
+  margin-bottom: 1rem;
+}
+
+.privacy-policy section,
+.terms-of-service section {
+  margin-bottom: 2rem;
+}
+
+.privacy-policy h2,
+.terms-of-service h2 {
+  color: #282c34;
+  margin-bottom: 1rem;
+}
+
+.privacy-policy p,
+.terms-of-service p {
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.privacy-policy ul,
+.terms-of-service ul {
+  margin-left: 2rem;
+  margin-bottom: 1rem;
+}
+
+.privacy-policy li,
+.terms-of-service li {
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
 }
 
 @keyframes App-logo-spin {
