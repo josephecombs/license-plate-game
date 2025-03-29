@@ -24,12 +24,10 @@
 		{
 			"tag": "v1",
 			"new_classes": [
-				"UserSession"
+				"UserSession",
+				"User",
+				"Game"
 			]
-		},
-		{
-			"tag": "v1",
-			"new_classes": ["User", "Game"]
 		}
 	]
 	/**

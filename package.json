@@ -24,7 +24,7 @@
     "test:worker": "jest cloudflare-oauth-worker/src/index.test.js",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build --cname www.platechase.com && (cd cloudflare-oauth-worker && wrangler publish)"
+    "deploy": "gh-pages -d build --cname www.platechase.com && (cd cloudflare-oauth-worker && wrangler deploy)"
   },
   "homepage": "https://www.platechase.com",
   "eslintConfig": {

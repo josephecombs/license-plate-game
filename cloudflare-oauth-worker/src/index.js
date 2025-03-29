@@ -118,7 +118,13 @@ export default {
 			if (!code) {
 				// Redirect to Google's OAuth consent screen
 				return Response.redirect(
-					`https://accounts.google.com/o/oauth2/auth?client_id=${env.GOOGLE_OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(url.origin + '/sessions/new')}&response_type=code&scope=email profile`,
+					`https://accounts.google.com/o/oauth2/auth?client_id=${env.GOOGLE_OAUTH_CLIENT_ID}&redirect_uri=${
+						encodeURIComponent(
+							env.NODE_ENV === 'production' 
+								? 'https://api.platechase.com/sessions/new' 
+								: url.origin + '/sessions/new'
+						)
+					}&response_type=code&scope=email profile`,
 					302
 				);
 			}
@@ -136,7 +142,7 @@ export default {
 					client_id: env.GOOGLE_OAUTH_CLIENT_ID,
 					client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
 					redirect_uri: env.NODE_ENV === 'production' 
-						? 'https://www.platechase.com'
+						? 'https://api.platechase.com/sessions/new'
 						: url.origin + '/sessions/new',
 					grant_type: 'authorization_code',
 				}),

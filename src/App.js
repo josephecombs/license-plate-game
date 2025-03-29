@@ -7,6 +7,10 @@ import TermsOfService from './components/TermsOfService';
 import './App.css';
 import Cookies from 'js-cookie';
 
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://api.platechase.com'
+  : 'http://localhost:8787';
+
 function App() {
   const [user, setUser] = useState(null);
   const sessionId = Cookies.get('session');
@@ -20,7 +24,7 @@ function App() {
 
     console.log('Fetching session validation for:', sessionId);
 
-    fetch('http://localhost:8787/validate-session', {
+    fetch(`${API_BASE_URL}/validate-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain'
@@ -45,7 +49,7 @@ function App() {
 
   useEffect(() => {
     if (user && sessionId) {
-      fetch('http://localhost:8787/game', {
+      fetch(`${API_BASE_URL}/game`, {
         method: 'GET',
         headers: {
           'Authorization': sessionId
@@ -80,7 +84,12 @@ function App() {
                 to="/" 
                 onClick={(e) => {
                   e.preventDefault();
-                  Cookies.remove('session');
+                  if (process.env.NODE_ENV === 'production') {
+                    Cookies.remove('session', { domain: 'www.platechase.com' });
+                    Cookies.remove('session', { domain: '.platechase.com' });
+                  } else {
+                    Cookies.remove('session');
+                  }
                   setUser(null);
                   window.location.reload();
                 }}
