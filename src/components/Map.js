@@ -48,10 +48,15 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
   };
 
   return (
-    <div>
-      <h2>License Plate Game</h2>
-      <p>Progress: {calculateProgress()}%</p>
-      <ComposableMap projection="geoAlbersUsa">
+    <div className="map-container">
+      <div className="header-content">
+        <h2>Plate Chase</h2>
+        <p className="progress">Progress: {calculateProgress()}%</p>
+      </div>
+      <div className="game-description">
+        <p>Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.</p>
+      </div>
+      <ComposableMap projection="geoAlbersUsa" className="us-map">
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
             geographies.map((geo) => {
@@ -100,6 +105,56 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
       </ComposableMap>
       <style>
         {`
+          .map-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          
+          .header-content {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+          }
+
+          .game-description {
+            text-align: center;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8em;
+            
+            @media (min-width: 768px) {
+              font-size: 0.5em;
+            }
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+
+          .header-content h2 {
+            margin: 0;
+          }
+
+          .progress {
+            margin: 0;
+            font-size: 1.2em;
+          }
+
+          .us-map {
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+          }
+          
+          @media (min-width: 768px) {
+            .map-container {
+              width: 70%;
+            }
+          }
+          
           @keyframes pulse {
             0% {
               fill: #FF5722;

@@ -83,7 +83,7 @@ function App() {
             <Link to="/privacy-policy">Privacy Policy</Link>
             <Link to="/terms-of-service">Terms of Service</Link>
           </div>
-          {user && (
+          {user ? (
             <div className="nav-right">
               Welcome back, {user.name}
               <Link 
@@ -105,12 +105,15 @@ function App() {
                 Logout
               </Link>
             </div>
+          ) : (
+            <div className="nav-right">
+              <OAuthButton />
+            </div>
           )}
         </nav>
         <Routes>
           <Route path="/" element={
             <header className="App-header">
-              {!user && <OAuthButton />}
               <Map user={user} visitedStates={visitedStates} setVisitedStates={setVisitedStates} />
             </header>
           } />

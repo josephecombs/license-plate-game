@@ -8,7 +8,7 @@ function PrivacyPolicy() {
 
       <section>
         <h2>1. Introduction</h2>
-        <p>Welcome to The License Plate Game. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we handle your data when you visit our website and tell you about your privacy rights.</p>
+        <p>Welcome to Plate Chase. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we handle your data when you visit our website and tell you about your privacy rights and how the law protects you.</p>
       </section>
 
       <section>
