@@ -47,7 +47,7 @@ export class Game extends DurableObject {
 		if (url.hostname === 'save-game') {
 			gameData[email] = gameState;
 			await this.ctx.storage.put('gameData', gameData);
-			return new Response('Game state stored successfully');
+			return new Response(JSON.stringify(gameData[email]), { headers: { 'Content-Type': 'application/json' } });
 		} else if (url.hostname === 'get-game') {
 			const userGameState = gameData[email] || {};
 			return new Response(JSON.stringify(userGameState), { headers: { 'Content-Type': 'application/json' } });
@@ -90,7 +90,7 @@ function setCORSHeaders(response, env, request) {
 	if (allowedOrigins.includes(origin)) {
 		newHeaders.set('Access-Control-Allow-Origin', origin);
 	}
-	newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT');
 	newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 	return new Response(response.body, {
 		...response,
@@ -247,24 +247,31 @@ export default {
 			} else {
 				const email = await getEmailFromSessionToken(sessionToken, env);
 				if (email) {
-					const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
-					const gameObjId = env.GAME.idFromName(currentMonthYear);
-					const gameObj = env.GAME.get(gameObjId);
-					const gameResponse = await gameObj.fetch(new Request('https://get-game', {
-						method: 'POST',
-						body: JSON.stringify({ email }),
-					}));
+					if (request.method === 'GET') {
+						const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+						const gameObjId = env.GAME.idFromName(currentMonthYear);
+						const gameObj = env.GAME.get(gameObjId);
+						const gameResponse = await gameObj.fetch(new Request('https://get-game', {
+							method: 'POST',
+							body: JSON.stringify({ email }),
+						}));
 
-					// gameResponse['hello'] = 'world'
-		
-					// const gameResponse = await gameObj.fetch(new Request('https://get-game', {
-					// 	method: request.method,
-					// 	body: JSON.stringify({ email, gameState: await request.json() }),
-					// 	headers: { 'Content-Type': 'application/json' }
-					// }));
-					// response = gameResponse;
-
-					response = new Response(JSON.stringify(gameResponse), { headers: { 'Content-Type': 'application/json' } });
+						response = new Response(JSON.stringify(gameResponse), { headers: { 'Content-Type': 'application/json' } });
+					} else if (request.method === 'PUT') {
+						const gameState = await request.json();
+						const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+						const gameObjId = env.GAME.idFromName(currentMonthYear);
+						const gameObj = env.GAME.get(gameObjId);
+						const saveResponse = await gameObj.fetch(new Request('https://save-game', {
+							method: 'POST',
+							body: JSON.stringify({ email, gameState }),
+						}));
+						
+						const savedGameState = await saveResponse.json();
+						response = new Response(JSON.stringify(savedGameState), { headers: { 'Content-Type': 'application/json' } });
+					} else {
+						response = new Response(JSON.stringify({ error: 'Unsupported request method' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
+					}
 				} else {
 					response = new Response(JSON.stringify({ error: 'Invalid session token' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 				}

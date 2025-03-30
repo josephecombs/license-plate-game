@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { API_BASE_URL } from '../App';
+import Cookies from 'js-cookie';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-const Map = () => {
+const Map = ({ user }) => {
   const [visitedStates, setVisitedStates] = useState(() => {
     const saved = localStorage.getItem('visitedStates');
     return saved ? JSON.parse(saved) : [];
@@ -14,11 +16,33 @@ const Map = () => {
     localStorage.setItem('visitedStates', JSON.stringify(visitedStates));
   }, [visitedStates]);
 
-  const handleStateClick = (stateId) => {
+  const handleStateClick = async (stateId) => {
     setLastClickedState(stateId);
-    setVisitedStates((prev) =>
-      prev.includes(stateId) ? prev.filter((id) => id !== stateId) : [...prev, stateId]
-    );
+    const newVisitedStates = visitedStates.includes(stateId) 
+      ? visitedStates.filter((id) => id !== stateId) 
+      : [...visitedStates, stateId];
+    
+    setVisitedStates(newVisitedStates);
+    
+    // Only send to server if user is logged in
+    if (user) {
+      try {
+        await fetch(`${API_BASE_URL}/game`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': Cookies.get('session')
+          },
+          body: JSON.stringify({
+            visitedStates: newVisitedStates,
+            progress: ((newVisitedStates.length / 50) * 100).toFixed(2)
+          })
+        });
+      } catch (error) {
+        console.error('Failed to save game state:', error);
+      }
+    }
+
     // Reset the animation trigger after animation completes
     setTimeout(() => setLastClickedState(null), 1000);
   };

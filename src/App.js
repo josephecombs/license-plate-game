@@ -7,7 +7,7 @@ import TermsOfService from './components/TermsOfService';
 import './App.css';
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
+export const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://api.platechase.com'
   : 'http://localhost:8787';
 
@@ -90,6 +90,7 @@ function App() {
                   } else {
                     Cookies.remove('session');
                   }
+                  localStorage.clear();
                   setUser(null);
                   window.location.reload();
                 }}
@@ -104,7 +105,7 @@ function App() {
           <Route path="/" element={
             <header className="App-header">
               {!user && <OAuthButton />}
-              <Map />
+              <Map user={user} />
             </header>
           } />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
