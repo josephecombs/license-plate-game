@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import Map from './components/Map';
 import OAuthButton from './components/OAuthButton';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -11,7 +11,7 @@ export const API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://api.platechase.com'
   : 'http://localhost:8787';
 
-function App() {
+function AppContent() {
   const [user, setUser] = useState(null);
   const sessionId = Cookies.get('session');
   const [gameState, setGameState] = useState(null);
@@ -19,6 +19,17 @@ function App() {
     const saved = localStorage.getItem('visitedStates');
     return saved ? JSON.parse(saved) : [];
   });
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Handle redirect from 404 page
+    const params = new URLSearchParams(location.search);
+    const redirectPath = params.get('redirect');
+    if (redirectPath) {
+      navigate(redirectPath, { replace: true });
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -75,52 +86,58 @@ function App() {
   }, [user, sessionId]);
 
   return (
-    <Router>
-      <div className="App">
-        <nav className="App-nav">
-          <div className="nav-left">
-            <Link to="/">Home</Link>
-            <Link to="/privacy-policy">Privacy Policy</Link>
-            <Link to="/terms-of-service">Terms of Service</Link>
+    <div className="App">
+      <nav className="App-nav">
+        <div className="nav-left">
+          <Link to="/">Home</Link>
+          <Link to="/privacy-policy">Privacy Policy</Link>
+          <Link to="/terms-of-service">Terms of Service</Link>
+        </div>
+        {user ? (
+          <div className="nav-right">
+            Welcome back, {user.name}
+            <Link 
+              to="/" 
+              onClick={(e) => {
+                e.preventDefault();
+                if (process.env.NODE_ENV === 'production') {
+                  Cookies.remove('session', { domain: 'www.platechase.com' });
+                  Cookies.remove('session', { domain: '.platechase.com' });
+                } else {
+                  Cookies.remove('session');
+                }
+                localStorage.clear();
+                setUser(null);
+                window.location.reload();
+              }}
+              style={{ marginLeft: '20px', color: '#666' }}
+            >
+              Logout
+            </Link>
           </div>
-          {user ? (
-            <div className="nav-right">
-              Welcome back, {user.name}
-              <Link 
-                to="/" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (process.env.NODE_ENV === 'production') {
-                    Cookies.remove('session', { domain: 'www.platechase.com' });
-                    Cookies.remove('session', { domain: '.platechase.com' });
-                  } else {
-                    Cookies.remove('session');
-                  }
-                  localStorage.clear();
-                  setUser(null);
-                  window.location.reload();
-                }}
-                style={{ marginLeft: '20px', color: '#666' }}
-              >
-                Logout
-              </Link>
-            </div>
-          ) : (
-            <div className="nav-right">
-              <OAuthButton />
-            </div>
-          )}
-        </nav>
-        <Routes>
-          <Route path="/" element={
-            <header className="App-header">
-              <Map user={user} visitedStates={visitedStates} setVisitedStates={setVisitedStates} />
-            </header>
-          } />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-        </Routes>
-      </div>
+        ) : (
+          <div className="nav-right">
+            <OAuthButton />
+          </div>
+        )}
+      </nav>
+      <Routes>
+        <Route path="/" element={
+          <header className="App-header">
+            <Map user={user} visitedStates={visitedStates} setVisitedStates={setVisitedStates} />
+          </header>
+        } />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+      </Routes>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

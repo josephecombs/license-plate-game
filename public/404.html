@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+  </head>
+  <body>
+    <script>
+      // Get the current path
+      const path = window.location.pathname;
+      
+      // Remove the .html extension if present
+      const cleanPath = path.replace(/\.html$/, '');
+      
+      // Redirect to the root with the path as a query parameter
+      window.location.href = '/?redirect=' + encodeURIComponent(cleanPath);
+    </script>
+  </body>
+</html> 
