@@ -5,11 +5,7 @@ import Cookies from 'js-cookie';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-const Map = ({ user }) => {
-  const [visitedStates, setVisitedStates] = useState(() => {
-    const saved = localStorage.getItem('visitedStates');
-    return saved ? JSON.parse(saved) : [];
-  });
+const Map = ({ user, visitedStates, setVisitedStates }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
 
   useEffect(() => {

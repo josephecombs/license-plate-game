@@ -110,7 +110,7 @@ async function getEmailFromSessionToken(sessionToken, env) {
 export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
-		console.log('Received request at:', url.pathname);
+
 		let response;
 
 		if (url.pathname === '/sessions/new') {
@@ -129,11 +129,6 @@ export default {
 				);
 			}
 
-			console.log('Authorization code:', code);
-
-			console.log('Client ID:', env.GOOGLE_OAUTH_CLIENT_ID);
-			console.log('Client Secret:', env.GOOGLE_OAUTH_CLIENT_SECRET);
-
 			const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -149,7 +144,6 @@ export default {
 			});
 
 			const tokenData = await tokenResponse.json();
-			console.log('Token data:', tokenData);
 			if (!tokenResponse.ok) {
 				console.error('Error exchanging code:', tokenData);
 				return new Response('Failed to exchange code: ' + tokenData.error, { status: 400 });
@@ -161,7 +155,6 @@ export default {
 			});
 
 			const userInfo = await userInfoResponse.json();
-			console.log('User info:', userInfo);
 			if (!userInfoResponse.ok) {
 				return new Response('Failed to fetch user info', { status: 500 });
 			}
@@ -212,10 +205,6 @@ export default {
 		} else if (url.pathname === '/validate-session') {
 			const sessionToken = await request.text();
 
-			console.log('sessionToken');
-			console.log(sessionToken);
-
-
 			if (!sessionToken) {
 				return new Response(JSON.stringify({ valid: false }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 			}
@@ -251,12 +240,14 @@ export default {
 						const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
 						const gameObjId = env.GAME.idFromName(currentMonthYear);
 						const gameObj = env.GAME.get(gameObjId);
+
 						const gameResponse = await gameObj.fetch(new Request('https://get-game', {
 							method: 'POST',
 							body: JSON.stringify({ email }),
 						}));
 
-						response = new Response(JSON.stringify(gameResponse), { headers: { 'Content-Type': 'application/json' } });
+						const gameData = await gameResponse.json();
+						response = new Response(JSON.stringify(gameData), { headers: { 'Content-Type': 'application/json' } });
 					} else if (request.method === 'PUT') {
 						const gameState = await request.json();
 						const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
@@ -266,7 +257,7 @@ export default {
 							method: 'POST',
 							body: JSON.stringify({ email, gameState }),
 						}));
-						
+
 						const savedGameState = await saveResponse.json();
 						response = new Response(JSON.stringify(savedGameState), { headers: { 'Content-Type': 'application/json' } });
 					} else {

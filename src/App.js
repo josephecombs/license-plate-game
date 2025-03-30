@@ -15,6 +15,10 @@ function App() {
   const [user, setUser] = useState(null);
   const sessionId = Cookies.get('session');
   const [gameState, setGameState] = useState(null);
+  const [visitedStates, setVisitedStates] = useState(() => {
+    const saved = localStorage.getItem('visitedStates');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     if (!sessionId) {
@@ -62,7 +66,9 @@ function App() {
         return response.json();
       })
       .then(data => {
-        setGameState(data);
+        const serverVisitedStates = data.visitedStates ?? [];
+        setVisitedStates(serverVisitedStates);
+        localStorage.setItem('visitedStates', JSON.stringify(serverVisitedStates));
       })
       .catch(error => console.error('Error fetching game state:', error));
     }
@@ -105,7 +111,7 @@ function App() {
           <Route path="/" element={
             <header className="App-header">
               {!user && <OAuthButton />}
-              <Map user={user} />
+              <Map user={user} visitedStates={visitedStates} setVisitedStates={setVisitedStates} />
             </header>
           } />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
