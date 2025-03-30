@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && node scripts/inject-scripts.js",
     "test": "react-scripts test",
     "test:worker": "jest cloudflare-oauth-worker/src/index.test.js",
     "eject": "react-scripts eject",
