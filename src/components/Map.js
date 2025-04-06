@@ -50,11 +50,10 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
   return (
     <div className="map-container">
       <div className="header-content">
-        <h2>Plate Chase</h2>
-        <p className="progress">Progress: {calculateProgress()}%</p>
-      </div>
-      <div className="game-description">
-        <p>Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.</p>
+        <div className="progress">Progress: {calculateProgress()}%</div>
+        <div className="game-description">
+          Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.
+        </div>
       </div>
       <ComposableMap projection="geoAlbersUsa" className="us-map">
         <Geographies geography={geoUrl}>
@@ -79,10 +78,11 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
                     },
                     hover: {
                       fill: isVisited ? "#FF5722" : "#ECEFF1",
-                      stroke: isAnimating ? "#FFF" : "#2196F3",
-                      strokeWidth: isAnimating ? 0.5 : 2,
+                      stroke: "#2196F3",
+                      strokeWidth: 2,
                       cursor: "pointer",
                       outline: "none",
+                      zIndex: 1,
                     },
                     pressed: {
                       fill: isVisited ? "#FF5722" : "#ECEFF1",
@@ -103,74 +103,6 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
           }
         </Geographies>
       </ComposableMap>
-      <style>
-        {`
-          .map-container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          
-          .header-content {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-          }
-
-          .game-description {
-            text-align: center;
-            margin-bottom: 15px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.8em;
-            
-            @media (min-width: 768px) {
-              font-size: 0.5em;
-            }
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-          }
-
-          .header-content h2 {
-            margin: 0;
-          }
-
-          .progress {
-            margin: 0;
-            font-size: 1.2em;
-          }
-
-          .us-map {
-            width: 100%;
-            height: auto;
-            max-height: 70vh;
-          }
-          
-          @media (min-width: 768px) {
-            .map-container {
-              width: 70%;
-            }
-          }
-          
-          @keyframes pulse {
-            0% {
-              fill: #FF5722;
-            }
-            25% {
-              fill: #2196F3;
-            }
-            75% {
-              fill: #2196F3;
-            }
-            100% {
-              fill: #FF5722;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };
