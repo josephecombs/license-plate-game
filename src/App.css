@@ -621,6 +621,10 @@
   transition: all 0.3s ease;
   font-size: 0.9rem;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .state-toggle-button:hover {
@@ -637,10 +641,15 @@
   background: #FF7043;
 }
 
+.checkmark-icon {
+  color: #4CAF50;
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   .state-toggle-list {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0rem;
   }
 
   .state-grid {
