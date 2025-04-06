@@ -2,15 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { API_BASE_URL } from '../App';
 import Cookies from 'js-cookie';
+import StateToggleList from './StateToggleList';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
 const Map = ({ user, visitedStates, setVisitedStates }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
+  const [stateNameToId, setStateNameToId] = useState({});
 
   useEffect(() => {
     localStorage.setItem('visitedStates', JSON.stringify(visitedStates));
   }, [visitedStates]);
+
+  useEffect(() => {
+    // Create a mapping of state names to their IDs when the component mounts
+    fetch(geoUrl)
+      .then(response => response.json())
+      .then(data => {
+        const mapping = {};
+        data.objects.states.geometries.forEach(geo => {
+          mapping[geo.properties.name] = geo.id;
+        });
+        setStateNameToId(mapping);
+      });
+  }, []);
 
   const handleStateClick = async (stateId) => {
     setLastClickedState(stateId);
@@ -41,6 +56,13 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
 
     // Reset the animation trigger after animation completes
     setTimeout(() => setLastClickedState(null), 1000);
+  };
+
+  const handleStateToggleByName = (stateName) => {
+    const stateId = stateNameToId[stateName];
+    if (stateId) {
+      handleStateClick(stateId);
+    }
   };
 
   const calculateProgress = () => {
@@ -77,12 +99,11 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
                       outline: "none",
                     },
                     hover: {
-                      fill: isVisited ? "#FF5722" : "#ECEFF1",
-                      stroke: "#2196F3",
-                      strokeWidth: 2,
+                      fill: "#2196F3",
+                      stroke: "#FFF",
+                      strokeWidth: 0.5,
                       cursor: "pointer",
                       outline: "none",
-                      zIndex: 1,
                     },
                     pressed: {
                       fill: isVisited ? "#FF5722" : "#ECEFF1",
@@ -103,6 +124,10 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
           }
         </Geographies>
       </ComposableMap>
+      <StateToggleList 
+        visitedStates={visitedStates} 
+        onStateToggle={handleStateToggleByName} 
+      />
     </div>
   );
 };

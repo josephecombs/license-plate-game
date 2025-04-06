@@ -566,7 +566,7 @@
 
   .map-container {
     width: 100%;
-    padding: 0 1rem;
+    padding: 0;
     margin-top: 0;
   }
 
@@ -585,5 +585,72 @@
   .mobile-progress-bar {
     width: 100%;
     margin: 0 auto;
+  }
+}
+
+.state-toggle-list {
+  width: 90%;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.state-toggle-list h2 {
+  color: white;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 0 1rem;
+}
+
+.state-toggle-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.state-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.state-toggle-button.visited {
+  background: #FF5722;
+  border-color: #FF5722;
+}
+
+.state-toggle-button.visited:hover {
+  background: #FF7043;
+}
+
+@media (max-width: 768px) {
+  .state-toggle-list {
+    width: 100%;
+    padding: 0.5rem;
+  }
+
+  .state-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .state-toggle-button {
+    padding: 0.5rem;
+    font-size: 0.8rem;
   }
 }
