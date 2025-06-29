@@ -26,7 +26,7 @@ const STATE_NAMES = {
 	'51': 'Virginia', '53': 'Washington', '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming'
 };
 
-// Helper function to send email notifications
+// Helper function to send email notifications using AWS SES
 async function sendStateChangeEmail(env, userEmail, userName, action, stateId, previousStates, newStates) {
 	const stateName = STATE_NAMES[stateId] || stateId;
 	const timestamp = new Date().toLocaleString();
@@ -53,24 +53,34 @@ Best regards,
 The Plate Chase Team
 `;
 
-	// Check if email binding is available (won't be in local dev)
-	if (!env.PLATECHASE_EMAIL) {
-		console.log(`📧 [DEV MODE] Email notification would be sent:`);
-		console.log(`   To: ${env.NOTIFICATION_EMAIL || 'your-email@example.com'}`);
-		console.log(`   From: support@platechase.com`);
-		console.log(`   Subject: ${subject}`);
-		console.log(`   Body: ${body}`);
-		return;
-	}
+	// Log the email details for debugging
+	console.log(`📧 Email notification:`);
+	console.log(`   To: ${env.NOTIFICATION_EMAIL}`);
+	console.log(`   From: support@platechase.com`);
+	console.log(`   Subject: ${subject}`);
 
 	try {
-		await env.PLATECHASE_EMAIL.send({
-			to: env.NOTIFICATION_EMAIL || 'your-email@example.com', // You'll need to set this secret
-			from: 'support@platechase.com',
-			subject: subject,
-			text: body
+		// Send email using AWS SES
+		const sesResponse = await fetch('https://email.us-east-1.amazonaws.com', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
+				'Authorization': `AWS4-HMAC-SHA256 Credential=${env.AWS_ACCESS_KEY_ID}/${new Date().toISOString().slice(0, 10)}/us-east-1/ses/aws4_request`
+			},
+			body: new URLSearchParams({
+				Action: 'SendEmail',
+				Source: 'support@platechase.com',
+				Destination: `ToAddresses=${env.NOTIFICATION_EMAIL}`,
+				Message: `Subject=${subject}&Body.Text=${encodeURIComponent(body)}`
+			})
 		});
-		console.log(`✅ Email notification sent for ${action} of ${stateName} by ${userEmail}`);
+
+		if (sesResponse.ok) {
+			console.log(`✅ Email notification sent for ${action} of ${stateName} by ${userEmail}`);
+		} else {
+			console.error('❌ Failed to send email notification:', await sesResponse.text());
+		}
 	} catch (error) {
 		console.error('❌ Failed to send email notification:', error);
 	}
