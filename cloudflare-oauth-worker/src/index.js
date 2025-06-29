@@ -11,6 +11,82 @@
 import { DurableObject } from "cloudflare:workers";
 import { v4 as uuidv4 } from 'uuid';
 
+// State mapping for readable names
+const STATE_NAMES = {
+	'01': 'Alabama', '02': 'Alaska', '04': 'Arizona', '05': 'Arkansas', '06': 'California',
+	'08': 'Colorado', '09': 'Connecticut', '10': 'Delaware', '11': 'District of Columbia',
+	'12': 'Florida', '13': 'Georgia', '15': 'Hawaii', '16': 'Idaho', '17': 'Illinois',
+	'18': 'Indiana', '19': 'Iowa', '20': 'Kansas', '21': 'Kentucky', '22': 'Louisiana',
+	'23': 'Maine', '24': 'Maryland', '25': 'Massachusetts', '26': 'Michigan', '27': 'Minnesota',
+	'28': 'Mississippi', '29': 'Missouri', '30': 'Montana', '31': 'Nebraska', '32': 'Nevada',
+	'33': 'New Hampshire', '34': 'New Jersey', '35': 'New Mexico', '36': 'New York',
+	'37': 'North Carolina', '38': 'North Dakota', '39': 'Ohio', '40': 'Oklahoma',
+	'41': 'Oregon', '42': 'Pennsylvania', '44': 'Rhode Island', '45': 'South Carolina',
+	'46': 'South Dakota', '47': 'Tennessee', '48': 'Texas', '49': 'Utah', '50': 'Vermont',
+	'51': 'Virginia', '53': 'Washington', '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming'
+};
+
+// Helper function to send email notifications
+async function sendStateChangeEmail(env, userEmail, userName, action, stateId, previousStates, newStates) {
+	const stateName = STATE_NAMES[stateId] || stateId;
+	const timestamp = new Date().toLocaleString();
+	const previousCount = previousStates.length;
+	const newCount = newStates.length;
+	
+	const subject = `Plate Chase - State ${action}: ${stateName}`;
+	
+	const body = `
+Hello from Plate Chase!
+
+${userName} (${userEmail}) has ${action.toLowerCase()} ${stateName} from their license plate collection.
+
+Details:
+- Action: ${action}
+- State: ${stateName}
+- Previous total: ${previousCount} states
+- New total: ${newCount} states
+- Timestamp: ${timestamp}
+
+Keep up the great work spotting those license plates!
+
+Best regards,
+The Plate Chase Team
+`;
+
+	// Check if email binding is available (won't be in local dev)
+	if (!env.PLATECHASE_EMAIL) {
+		console.log(`📧 [DEV MODE] Email notification would be sent:`);
+		console.log(`   To: ${env.NOTIFICATION_EMAIL || 'your-email@example.com'}`);
+		console.log(`   From: support@platechase.com`);
+		console.log(`   Subject: ${subject}`);
+		console.log(`   Body: ${body}`);
+		return;
+	}
+
+	try {
+		await env.PLATECHASE_EMAIL.send({
+			to: env.NOTIFICATION_EMAIL || 'your-email@example.com', // You'll need to set this secret
+			from: 'support@platechase.com',
+			subject: subject,
+			text: body
+		});
+		console.log(`✅ Email notification sent for ${action} of ${stateName} by ${userEmail}`);
+	} catch (error) {
+		console.error('❌ Failed to send email notification:', error);
+	}
+}
+
+// Helper function to detect state changes
+function detectStateChanges(previousStates, newStates) {
+	const previousSet = new Set(previousStates);
+	const newSet = new Set(newStates);
+	
+	const added = newStates.filter(state => !previousSet.has(state));
+	const removed = previousStates.filter(state => !newSet.has(state));
+	
+	return { added, removed };
+}
+
 // Define the User Durable Object
 export class User extends DurableObject {
 	constructor(ctx, env) {
@@ -253,12 +329,43 @@ export default {
 						const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
 						const gameObjId = env.GAME.idFromName(currentMonthYear);
 						const gameObj = env.GAME.get(gameObjId);
+						
+						// Get previous game state to detect changes
+						const previousGameResponse = await gameObj.fetch(new Request('https://get-game', {
+							method: 'POST',
+							body: JSON.stringify({ email }),
+						}));
+						const previousGameData = await previousGameResponse.json();
+						const previousStates = previousGameData.visitedStates || [];
+						const newStates = gameState.visitedStates || [];
+						
+						// Detect state changes
+						const { added, removed } = detectStateChanges(previousStates, newStates);
+						
+						// Save the new game state
 						const saveResponse = await gameObj.fetch(new Request('https://save-game', {
 							method: 'POST',
 							body: JSON.stringify({ email, gameState }),
 						}));
 
 						const savedGameState = await saveResponse.json();
+						
+						// Get user info for email notifications
+						const userObjId = env.USER.idFromName(email);
+						const userObj = env.USER.get(userObjId);
+						const userResponse = await userObj.fetch(new Request('https://get-user'));
+						const userData = await userResponse.json();
+						const userName = userData.name || email;
+						
+						// Send email notifications for state changes
+						for (const stateId of added) {
+							await sendStateChangeEmail(env, email, userName, 'ADDED', stateId, previousStates, newStates);
+						}
+						
+						for (const stateId of removed) {
+							await sendStateChangeEmail(env, email, userName, 'REMOVED', stateId, previousStates, newStates);
+						}
+						
 						response = new Response(JSON.stringify(savedGameState), { headers: { 'Content-Type': 'application/json' } });
 					} else {
 						response = new Response(JSON.stringify({ error: 'Unsupported request method' }), { status: 405, headers: { 'Content-Type': 'application/json' } });

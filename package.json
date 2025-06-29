@@ -25,7 +25,8 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "source ~/.nvm/nvm.sh && nvm use 18.20.8 && gh-pages -d build --cname www.platechase.com && (cd cloudflare-oauth-worker && npx wrangler deploy)",
-    "resize-social-images": "node scripts/resize-social-images.js"
+    "resize-social-images": "node scripts/resize-social-images.js",
+    "dev": "chmod +x scripts/dev-setup.sh && ./scripts/dev-setup.sh"
   },
   "homepage": "https://www.platechase.com",
   "eslintConfig": {
