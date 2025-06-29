@@ -24,7 +24,8 @@
     "test:worker": "jest cloudflare-oauth-worker/src/index.test.js",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build --cname www.platechase.com && (cd cloudflare-oauth-worker && wrangler deploy)"
+    "deploy": "source ~/.nvm/nvm.sh && nvm use 18.20.8 && gh-pages -d build --cname www.platechase.com && (cd cloudflare-oauth-worker && npx wrangler deploy)",
+    "resize-social-images": "node scripts/resize-social-images.js"
   },
   "homepage": "https://www.platechase.com",
   "eslintConfig": {
@@ -53,7 +54,9 @@
     "concurrently": "^9.1.2",
     "gh-pages": "^6.3.0",
     "jest": "^27.5.1",
-    "miniflare": "^4.20250320.0"
+    "jimp": "^0.16.13",
+    "miniflare": "^4.20250320.0",
+    "sharp": "^0.34.1"
   },
   "jest": {
     "transform": {
