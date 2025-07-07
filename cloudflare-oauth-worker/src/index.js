@@ -398,6 +398,20 @@ export default {
 			response = new Response(JSON.stringify(envDebug, null, 2), { 
 				headers: { 'Content-Type': 'application/json' } 
 			});
+		} else if (url.pathname === '/reports') {
+			// Admin-only reports endpoint
+			const sessionToken = request.headers.get('Authorization');
+			if (!sessionToken) {
+				response = new Response(JSON.stringify({ error: 'No session token provided' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+			} else {
+				const email = await getEmailFromSessionToken(sessionToken, env);
+				if (email && email === 'joseph.e.combs@gmail.com') {
+					// Admin authentication successful - return "Jayson" as requested
+					response = new Response(JSON.stringify({ message: 'Authenticated as Admin' }), { headers: { 'Content-Type': 'application/json' } });
+				} else {
+					response = new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+				}
+			}
 		} else {
 			response = new Response('Hello World!');
 		}

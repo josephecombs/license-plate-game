@@ -1,50 +1,96 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
+
+export const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://api.platechase.com'
+  : 'http://localhost:8787';
 
 function Reports() {
+  const [adminStatus, setAdminStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const sessionId = Cookies.get('session');
+
+  useEffect(() => {
+    if (!sessionId) {
+      setError('No session found. Please log in.');
+      setLoading(false);
+      return;
+    }
+
+    fetch(`${API_BASE_URL}/reports`, {
+      method: 'GET',
+      headers: {
+        'Authorization': sessionId
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      } else if (response.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      } else {
+        throw new Error('Failed to check admin status.');
+      }
+    })
+    .then(data => {
+      setAdminStatus(data.message);
+      setLoading(false);
+    })
+    .catch(error => {
+      setError(error.message);
+      setLoading(false);
+    });
+  }, [sessionId]);
+
+  if (loading) {
+    return (
+      <div className="privacy-policy">
+        <h1>Admin Reports</h1>
+        <p>Checking admin status...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="privacy-policy">
+        <h1>Admin Reports</h1>
+        <section>
+          <h2>Access Denied</h2>
+          <p>{error}</p>
+          <p>This page is restricted to administrators only.</p>
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <div className="reports">
-      <h1>Usage Reports</h1>
+    <div className="privacy-policy">
+      <h1>Admin Reports</h1>
       <p>Last updated: {new Date().toLocaleDateString()}</p>
 
       <section>
-        <h2>1. User Statistics</h2>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <h2>Admin Status</h2>
+        <p style={{ color: '#4285f4', fontWeight: 'bold' }}>✅ {adminStatus}</p>
+        <p>You have full administrative access to the system.</p>
       </section>
 
       <section>
-        <h2>2. Game Activity</h2>
-        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <h2>Available Reports</h2>
+        <p>As an administrator, you have access to the following reports and analytics:</p>
         <ul>
-          <li>Total states visited across all users</li>
-          <li>Most popular states</li>
-          <li>User engagement metrics</li>
-          <li>Daily active users</li>
+          <li>User registration and activity statistics</li>
+          <li>Game progress and state completion data</li>
+          <li>System performance metrics</li>
+          <li>Error logs and debugging information</li>
+          <li>API usage analytics</li>
         </ul>
       </section>
 
       <section>
-        <h2>3. System Performance</h2>
-        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
-      </section>
-
-      <section>
-        <h2>4. Error Logs</h2>
-        <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
-      </section>
-
-      <section>
-        <h2>5. API Usage</h2>
-        <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.</p>
-      </section>
-
-      <section>
-        <h2>6. Database Metrics</h2>
-        <p>Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.</p>
-      </section>
-
-      <section>
-        <h2>7. Security Events</h2>
-        <p>Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.</p>
+        <h2>System Information</h2>
+        <p>This admin panel is powered by Cloudflare Workers and provides real-time access to system data and user analytics.</p>
       </section>
     </div>
   );
