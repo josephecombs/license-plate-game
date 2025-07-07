@@ -3,17 +3,25 @@ import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { API_BASE_URL } from '../App';
 import Cookies from 'js-cookie';
 import StateToggleList from './StateToggleList';
+import LoginModal from './LoginModal';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
 const Map = ({ user, visitedStates, setVisitedStates }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('visitedStates', JSON.stringify(visitedStates));
   }, [visitedStates]);
 
   const handleStateClick = async (stateId) => {
+    // If user is not logged in, show the login modal instead
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     setLastClickedState(stateId);
     const newVisitedStates = visitedStates.includes(stateId) 
       ? visitedStates.filter((id) => id !== stateId) 
@@ -21,27 +29,34 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
     
     setVisitedStates(newVisitedStates);
     
-    // Only send to server if user is logged in
-    if (user) {
-      try {
-        await fetch(`${API_BASE_URL}/game`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': Cookies.get('session')
-          },
-          body: JSON.stringify({
-            visitedStates: newVisitedStates,
-            progress: ((newVisitedStates.length / 50) * 100).toFixed(2)
-          })
-        });
-      } catch (error) {
-        console.error('Failed to save game state:', error);
-      }
+    // Send to server since user is logged in
+    try {
+      await fetch(`${API_BASE_URL}/game`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': Cookies.get('session')
+        },
+        body: JSON.stringify({
+          visitedStates: newVisitedStates,
+          progress: ((newVisitedStates.length / 50) * 100).toFixed(2)
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save game state:', error);
     }
 
     // Reset the animation trigger after animation completes
     setTimeout(() => setLastClickedState(null), 1000);
+  };
+
+  // Handler for both map and list clicks
+  const handleStateClickWithLogin = async (stateId) => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    await handleStateClick(stateId);
   };
 
   const calculateProgress = () => {
@@ -105,7 +120,11 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
       </ComposableMap>
       <StateToggleList 
         visitedStates={visitedStates} 
-        onStateToggle={handleStateClick} 
+        onStateClick={handleStateClickWithLogin}
+      />
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
       />
     </div>
   );

@@ -54,7 +54,8 @@ const US_STATES = [
   { name: 'Wyoming', id: '56' }
 ];
 
-const StateToggleList = ({ visitedStates, onStateToggle }) => {
+// onStateClick handles login logic and toggling
+const StateToggleList = ({ visitedStates, onStateClick }) => {
   return (
     <div className="state-toggle-list">
       <h2>State List</h2>
@@ -64,8 +65,8 @@ const StateToggleList = ({ visitedStates, onStateToggle }) => {
           return (
             <button
               key={state.id}
-              className={`state-toggle-button ${isVisited ? '' : ''}`}
-              onClick={() => onStateToggle(state.id)}
+              className={`state-toggle-button ${isVisited ? 'visited' : ''}`}
+              onClick={() => onStateClick(state.id)}
             >
               {isVisited && (
                 <svg 
