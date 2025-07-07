@@ -139,17 +139,14 @@ export class Game extends DurableObject {
 			console.log('📖 Retrieved game state:', userGameState);
 			return new Response(JSON.stringify(userGameState), { headers: { 'Content-Type': 'application/json' } });
 		} else if (url.hostname === 'get-all-users') {
-			// Return all users with their names from User Durable Objects
+			// Return structured data with user emails and their game data
 			const users = [];
 			console.log('Current gameData:', gameData);
 			for (const userEmail of Object.keys(gameData)) {
-				const userObjId = env.USER.idFromName(userEmail);
-				const userObj = env.USER.get(userObjId);
-				const userResponse = await userObj.fetch(new Request('https://get-user'));
-				const userData = await userResponse.json();
+				
 				users.push({
 					email: userEmail,
-					name: userData.name || userEmail
+					gameData: gameData[userEmail],
 				});
 			}
 			return new Response(JSON.stringify(users), { headers: { 'Content-Type': 'application/json' } });
@@ -476,22 +473,24 @@ export default {
 			} else {
 				const email = await getEmailFromSessionToken(sessionToken, env);
 				if (email && email === 'joseph.e.combs@gmail.com') {
-					// Admin authentication successful - get all users from current month
+					// Admin authentication successful - get all game data from current month
 					const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
 					console.log('📊 /reports - Month/Year:', currentMonthYear);
 					const gameObjId = env.GAME.idFromName(currentMonthYear);
 					const gameObj = env.GAME.get(gameObjId);
 					
-					const usersResponse = await gameObj.fetch(new Request('https://get-all-users', {
+					// Get the full game data directly
+					const gameDataResponse = await gameObj.fetch(new Request('https://get-all-users', {
 						method: 'POST',
 						body: JSON.stringify({ dummy: 'data' })
 					}));
-					const users = await usersResponse.json();
-					console.log('📊 /reports - Retrieved users:', users);
+					const gameData = await gameDataResponse.json();
+					console.log('📊 /reports - Retrieved game data:', gameData);
 					
 					response = new Response(JSON.stringify({ 
 						message: 'Authenticated as Admin',
-						users: users
+						monthYear: currentMonthYear,
+						gameData: gameData
 					}), { headers: { 'Content-Type': 'application/json' } });
 				} else {
 					response = new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
