@@ -116,17 +116,31 @@ export class Game extends DurableObject {
 
 	async fetch(request) {
 		const url = new URL(request.url);
-		const { email, gameState } = await request.json();
-
 		let gameData = await this.ctx.storage.get('gameData') || {};
 
 		if (url.hostname === 'save-game') {
+			const { email, gameState } = await request.json();
 			gameData[email] = gameState;
 			await this.ctx.storage.put('gameData', gameData);
 			return new Response(JSON.stringify(gameData[email]), { headers: { 'Content-Type': 'application/json' } });
 		} else if (url.hostname === 'get-game') {
+			const { email } = await request.json();
 			const userGameState = gameData[email] || {};
 			return new Response(JSON.stringify(userGameState), { headers: { 'Content-Type': 'application/json' } });
+		} else if (url.hostname === 'get-all-users') {
+			// Return all users with their names from User Durable Objects
+			const users = [];
+			for (const userEmail of Object.keys(gameData)) {
+				const userObjId = env.USER.idFromName(userEmail);
+				const userObj = env.USER.get(userObjId);
+				const userResponse = await userObj.fetch(new Request('https://get-user'));
+				const userData = await userResponse.json();
+				users.push({
+					email: userEmail,
+					name: userData.name || userEmail
+				});
+			}
+			return new Response(JSON.stringify(users), { headers: { 'Content-Type': 'application/json' } });
 		}
 
 		return new Response('Method not allowed', { status: 405 });
@@ -406,8 +420,18 @@ export default {
 			} else {
 				const email = await getEmailFromSessionToken(sessionToken, env);
 				if (email && email === 'joseph.e.combs@gmail.com') {
-					// Admin authentication successful - return "Jayson" as requested
-					response = new Response(JSON.stringify({ message: 'Authenticated as Admin' }), { headers: { 'Content-Type': 'application/json' } });
+					// Admin authentication successful - get all users from current month's game data
+					const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+					const gameObjId = env.GAME.idFromName(currentMonthYear);
+					const gameObj = env.GAME.get(gameObjId);
+					
+					const usersResponse = await gameObj.fetch(new Request('https://get-all-users'));
+					const users = await usersResponse.json();
+					
+					response = new Response(JSON.stringify({ 
+						message: 'Authenticated as Admin',
+						users: users
+					}), { headers: { 'Content-Type': 'application/json' } });
 				} else {
 					response = new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 				}

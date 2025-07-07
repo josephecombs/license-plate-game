@@ -7,6 +7,7 @@ export const API_BASE_URL = process.env.NODE_ENV === 'production'
 
 function Reports() {
   const [adminStatus, setAdminStatus] = useState(null);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const sessionId = Cookies.get('session');
@@ -35,6 +36,7 @@ function Reports() {
     })
     .then(data => {
       setAdminStatus(data.message);
+      setUsers(data.users || []);
       setLoading(false);
     })
     .catch(error => {
@@ -65,6 +67,8 @@ function Reports() {
     );
   }
 
+  const userCount = users.length;
+
   return (
     <div className="privacy-policy">
       <h1>Admin Reports</h1>
@@ -77,20 +81,39 @@ function Reports() {
       </section>
 
       <section>
-        <h2>Available Reports</h2>
-        <p>As an administrator, you have access to the following reports and analytics:</p>
-        <ul>
-          <li>User registration and activity statistics</li>
-          <li>Game progress and state completion data</li>
-          <li>System performance metrics</li>
-          <li>Error logs and debugging information</li>
-          <li>API usage analytics</li>
-        </ul>
+        <h2>User Registry</h2>
+        <p>Total registered users: <strong>{userCount}</strong></p>
+        
+        {userCount > 0 ? (
+          <div style={{ marginTop: '1rem' }}>
+            <h3>All Users:</h3>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+              gap: '1rem',
+              marginTop: '1rem'
+            }}>
+              {users.map((user) => (
+                <div key={user.email} style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{user.name}</div>
+                  <div style={{ fontSize: '0.9rem', color: '#888' }}>{user.email}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p>No users found in the current month's data.</p>
+        )}
       </section>
 
       <section>
         <h2>System Information</h2>
-        <p>This admin panel is powered by Cloudflare Workers and provides real-time access to system data and user analytics.</p>
+        <p>This admin panel provides real-time access to user data and system analytics.</p>
       </section>
     </div>
   );
