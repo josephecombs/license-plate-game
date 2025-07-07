@@ -117,19 +117,31 @@ export class Game extends DurableObject {
 	async fetch(request) {
 		const url = new URL(request.url);
 		let gameData = await this.ctx.storage.get('gameData') || {};
+		
+		console.log('🎮 Game Durable Object accessed:');
+		console.log('   URL hostname:', url.hostname);
+		console.log('   Current gameData:', gameData);
+		console.log('   Storage keys:', await this.ctx.storage.list());
 
 		if (url.hostname === 'save-game') {
 			const { email, gameState } = await request.json();
+			console.log('💾 Saving game data:');
+			console.log('   Email:', email);
+			console.log('   Game state:', gameState);
 			gameData[email] = gameState;
 			await this.ctx.storage.put('gameData', gameData);
+			console.log('✅ Game data saved. Updated gameData:', gameData);
 			return new Response(JSON.stringify(gameData[email]), { headers: { 'Content-Type': 'application/json' } });
 		} else if (url.hostname === 'get-game') {
 			const { email } = await request.json();
+			console.log('📖 Retrieving game data for email:', email);
 			const userGameState = gameData[email] || {};
+			console.log('📖 Retrieved game state:', userGameState);
 			return new Response(JSON.stringify(userGameState), { headers: { 'Content-Type': 'application/json' } });
 		} else if (url.hostname === 'get-all-users') {
 			// Return all users with their names from User Durable Objects
 			const users = [];
+			console.log('Current gameData:', gameData);
 			for (const userEmail of Object.keys(gameData)) {
 				const userObjId = env.USER.idFromName(userEmail);
 				const userObj = env.USER.get(userObjId);
@@ -341,6 +353,7 @@ export default {
 				if (email) {
 					if (request.method === 'GET') {
 						const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+						console.log('🎮 GET /game - Month/Year:', currentMonthYear);
 						const gameObjId = env.GAME.idFromName(currentMonthYear);
 						const gameObj = env.GAME.get(gameObjId);
 
@@ -350,10 +363,13 @@ export default {
 						}));
 
 						const gameData = await gameResponse.json();
+						console.log('🎮 GET /game - Retrieved data:', gameData);
 						response = new Response(JSON.stringify(gameData), { headers: { 'Content-Type': 'application/json' } });
 					} else if (request.method === 'PUT') {
 						const gameState = await request.json();
 						const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+						console.log('🎮 PUT /game - Month/Year:', currentMonthYear);
+						console.log('🎮 PUT /game - Game state to save:', gameState);
 						const gameObjId = env.GAME.idFromName(currentMonthYear);
 						const gameObj = env.GAME.get(gameObjId);
 						
@@ -412,6 +428,46 @@ export default {
 			response = new Response(JSON.stringify(envDebug, null, 2), { 
 				headers: { 'Content-Type': 'application/json' } 
 			});
+		} else if (url.pathname === '/debug-game') {
+			// Debug endpoint to test game data storage directly
+			const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+			console.log('🔍 /debug-game - Month/Year:', currentMonthYear);
+			
+			const gameObjId = env.GAME.idFromName(currentMonthYear);
+			const gameObj = env.GAME.get(gameObjId);
+			
+			if (request.method === 'POST') {
+				// Save test data
+				const testData = { email: 'test@example.com', gameState: { visitedStates: ['01', '02'], test: true } };
+				console.log('🔍 /debug-game - Saving test data:', testData);
+				
+				const saveResponse = await gameObj.fetch(new Request('https://save-game', {
+					method: 'POST',
+					body: JSON.stringify(testData),
+				}));
+				
+				const savedData = await saveResponse.json();
+				console.log('🔍 /debug-game - Save response:', savedData);
+				
+				response = new Response(JSON.stringify({ 
+					message: 'Test data saved',
+					savedData: savedData,
+					monthYear: currentMonthYear
+				}), { headers: { 'Content-Type': 'application/json' } });
+			} else {
+				// Get all data
+				const allUsersResponse = await gameObj.fetch(new Request('https://get-all-users', {
+					method: 'POST',
+					body: JSON.stringify({ dummy: 'data' })
+				}));
+				const allUsers = await allUsersResponse.json();
+				
+				response = new Response(JSON.stringify({ 
+					message: 'Debug game data',
+					allUsers: allUsers,
+					monthYear: currentMonthYear
+				}), { headers: { 'Content-Type': 'application/json' } });
+			}
 		} else if (url.pathname === '/reports') {
 			// Admin-only reports endpoint
 			const sessionToken = request.headers.get('Authorization');
@@ -420,13 +476,18 @@ export default {
 			} else {
 				const email = await getEmailFromSessionToken(sessionToken, env);
 				if (email && email === 'joseph.e.combs@gmail.com') {
-					// Admin authentication successful - get all users from current month's game data
+					// Admin authentication successful - get all users from current month
 					const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+					console.log('📊 /reports - Month/Year:', currentMonthYear);
 					const gameObjId = env.GAME.idFromName(currentMonthYear);
 					const gameObj = env.GAME.get(gameObjId);
 					
-					const usersResponse = await gameObj.fetch(new Request('https://get-all-users'));
+					const usersResponse = await gameObj.fetch(new Request('https://get-all-users', {
+						method: 'POST',
+						body: JSON.stringify({ dummy: 'data' })
+					}));
 					const users = await usersResponse.json();
+					console.log('📊 /reports - Retrieved users:', users);
 					
 					response = new Response(JSON.stringify({ 
 						message: 'Authenticated as Admin',
