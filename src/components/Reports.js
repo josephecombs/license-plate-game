@@ -45,9 +45,9 @@ function Reports() {
       if (response.ok) {
         return response.json();
       } else if (response.status === 403) {
-        throw new Error('Access denied. Admin privileges required.');
+        throw new Error('Access denied. Please log in to view reports.');
       } else {
-        throw new Error('Failed to check admin status.');
+        throw new Error('Failed to load reports.');
       }
     })
     .then(data => {
@@ -88,11 +88,11 @@ function Reports() {
   if (error) {
     return (
       <div className="privacy-policy">
-        <h1>Admin Reports</h1>
+        <h1>Reports</h1>
         <section>
           <h2>Access Denied</h2>
           <p>{error}</p>
-          <p>This page is restricted to administrators only.</p>
+          <p>Please log in to view reports.</p>
         </section>
       </div>
     );
@@ -106,15 +106,15 @@ function Reports() {
 
   return (
     <div className="privacy-policy">
-      <h1>Admin Reports</h1>
+      <h1>Reports</h1>
       <p style={{ color: '#666', fontSize: '0.9rem' }}>
         Last updated: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
       </p>
 
       <section>
-        <h2>Admin Status</h2>
+        <h2>Access Status</h2>
         <p style={{ color: '#4285f4', fontWeight: 'bold', fontSize: '1.1rem' }}>✅ {adminStatus}</p>
-        <p>You have full administrative access to the system.</p>
+        <p>{adminStatus === 'Authenticated as Admin' ? 'You have full administrative access to the system.' : 'You have user access to anonymized reports.'}</p>
       </section>
 
       <section>
@@ -260,7 +260,7 @@ function Reports() {
 
       <section>
         <h2>System Information</h2>
-        <p>This admin panel provides real-time access to user data and system analytics for {monthYear}.</p>
+        <p>This reports panel provides real-time access to user data and system analytics for {monthYear}.</p>
         <div style={{ 
           background: 'rgba(255, 255, 255, 0.02)', 
           padding: '1rem', 
@@ -271,7 +271,7 @@ function Reports() {
         }}>
           <strong>Data Source:</strong> Cloudflare Durable Objects<br/>
           <strong>Update Frequency:</strong> Real-time<br/>
-          <strong>Access Level:</strong> Administrator Only
+          <strong>Access Level:</strong> {adminStatus === 'Authenticated as Admin' ? 'Administrator (Full Access)' : 'User (Anonymized Data)'}
         </div>
       </section>
     </div>

@@ -466,14 +466,14 @@ export default {
 				}), { headers: { 'Content-Type': 'application/json' } });
 			}
 		} else if (url.pathname === '/reports') {
-			// Admin-only reports endpoint
+			// Reports endpoint - admin gets full data, others get anonymized data
 			const sessionToken = request.headers.get('Authorization');
 			if (!sessionToken) {
 				response = new Response(JSON.stringify({ error: 'No session token provided' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
 			} else {
 				const email = await getEmailFromSessionToken(sessionToken, env);
-				if (email && email === 'joseph.e.combs@gmail.com') {
-					// Admin authentication successful - get all game data from current month
+				if (email) {
+					// Get all game data from current month
 					const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
 					console.log('📊 /reports - Month/Year:', currentMonthYear);
 					const gameObjId = env.GAME.idFromName(currentMonthYear);
@@ -487,13 +487,22 @@ export default {
 					const gameData = await gameDataResponse.json();
 					console.log('📊 /reports - Retrieved game data:', gameData);
 					
+					// Check if user is admin
+					const isAdmin = email === 'joseph.e.combs@gmail.com';
+					
+					// Anonymize email addresses for non-admin users
+					const processedGameData = isAdmin ? gameData : gameData.map(user => ({
+						...user,
+						email: anonymizeEmail(user.email)
+					}));
+					
 					response = new Response(JSON.stringify({ 
-						message: 'Authenticated as Admin',
+						message: isAdmin ? 'Authenticated as Admin' : 'Authenticated as User',
 						monthYear: currentMonthYear,
-						gameData: gameData
+						gameData: processedGameData
 					}), { headers: { 'Content-Type': 'application/json' } });
 				} else {
-					response = new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+					response = new Response(JSON.stringify({ error: 'Invalid session token' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 				}
 			}
 		} else {
@@ -502,6 +511,25 @@ export default {
 		return setCORSHeaders(response, env, request);
 	},
 };
+
+// Anonymize email address
+function anonymizeEmail(email) {
+	if (!email || typeof email !== 'string') return email;
+	
+	const atIndex = email.indexOf('@');
+	if (atIndex === -1) return email;
+	
+	const alias = email.substring(0, atIndex);
+	const domain = email.substring(atIndex);
+	
+	if (alias.length <= 1) return email;
+	
+	const firstLetter = alias.charAt(0);
+	const lastFourLetters = alias.length >= 4 ? alias.slice(-4) : alias.slice(1);
+	const stars = '*'.repeat(Math.max(1, alias.length - 5));
+	
+	return `${firstLetter}${stars}${lastFourLetters}${domain}`;
+}
 
 // Send email notification using AWS SES
 async function sendEmailNotification(env, to, from, subject, body) {

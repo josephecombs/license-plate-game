@@ -131,6 +131,7 @@ function AppContent() {
           </button>
           <div className={`nav-links ${isMenuOpen ? 'open' : ''}`}>
             <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
+            <Link to="/reports" onClick={() => setIsMenuOpen(false)}>Reports</Link>
             <Link to="/privacy-policy" onClick={() => setIsMenuOpen(false)}>Privacy Policy</Link>
             <Link to="/terms-of-service" onClick={() => setIsMenuOpen(false)}>Terms of Service</Link>
           </div>
