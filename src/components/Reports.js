@@ -377,6 +377,123 @@ function Reports() {
           </div>
         </div>
       )}
+
+      {/* Banned Users Section */}
+      {(() => {
+        const bannedUsers = gameData.filter(user => user.banned === true);
+        if (bannedUsers.length > 0 && adminStatus === 'Authenticated as Admin') {
+          return (
+            <section>
+              <h2>Banned Users</h2>
+              <p style={{ color: '#f44336', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                ⚠️ The following users have been banned from the system
+              </p>
+              
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', 
+                gap: '1.5rem'
+              }}>
+                {bannedUsers.map((user) => {
+                  const visitedStates = user.gameData?.visitedStates || [];
+                  const progress = user.gameData?.progress || '0.00';
+                  
+                  return (
+                    <div key={user.email} style={{
+                      background: 'rgba(244, 67, 54, 0.1)',
+                      padding: '1.5rem',
+                      borderRadius: '12px',
+                      border: '2px solid rgba(244, 67, 54, 0.3)',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      position: 'relative'
+                    }}>
+                      {/* Banned Badge */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        right: '1rem',
+                        background: '#f44336',
+                        color: 'white',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '15px',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase'
+                      }}>
+                        Banned
+                      </div>
+                      
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginBottom: '1rem'
+                      }}>
+                        <div>
+                          <div style={{ 
+                            fontWeight: 'bold', 
+                            fontSize: '1.1rem', 
+                            marginBottom: '0.25rem',
+                            color: '#f44336'
+                          }}>
+                            {user.email}
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: '#888' }}>
+                            {visitedStates.length} states spotted
+                          </div>
+                        </div>
+                        <div style={{
+                          background: '#f44336',
+                          color: 'white',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '20px',
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem'
+                        }}>
+                          {progress}%
+                        </div>
+                      </div>
+                      
+                      {visitedStates.length > 0 && (
+                        <div>
+                          <div style={{ 
+                            fontSize: '0.9rem', 
+                            color: '#888', 
+                            marginBottom: '0.5rem',
+                            fontWeight: '500'
+                          }}>
+                            States Collected:
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                          }}>
+                            {visitedStates.map((stateId) => (
+                              <span key={stateId} style={{
+                                background: 'rgba(244, 67, 54, 0.1)',
+                                color: '#f44336',
+                                padding: '0.25rem 0.75rem',
+                                borderRadius: '15px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                border: '1px solid rgba(244, 67, 54, 0.2)'
+                              }}>
+                                {getStateName(stateId)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        }
+        return null;
+      })()}
     </div>
   );
 }

@@ -1,0 +1,18 @@
+I have a user in prod who logged in and spammed all 51 states.
+
+obviously this is illegitimate so I need you to do a few steps to implement the ability to ban and purge a user's info.
+
+step 1:
+in the reports page, if logged in as an admin, create a "more actions" button next to email that when clicked opens a modal for now with lorem ipsum
+
+step 2:
+on the reports page, if the user has the attribute banned: true, add a list at the very bottom of the page with all banned users
+
+step 3
+inside the modal, remove the lorem and add a button with an alert confirmation that asks an admin to confirm if they'd like to ban a user and purge their info from the system pick a route that makes sense but don't implement controller or anything quite yet
+
+step 4
+
+
+
+
