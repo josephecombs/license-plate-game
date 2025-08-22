@@ -150,24 +150,6 @@ export class Game extends DurableObject {
 				});
 			}
 			return new Response(JSON.stringify(users), { headers: { 'Content-Type': 'application/json' } });
-		} else if (url.hostname === 'update-all-users') {
-			// Update all users with new data (used for migrations)
-			const { users } = await request.json();
-			console.log('🔄 Updating all users with new data structure');
-			
-			// Clear existing gameData and rebuild from the updated users array
-			const newGameData = {};
-			for (const user of users) {
-				newGameData[user.email] = user.gameData;
-			}
-			
-			// Save the updated game data
-			await this.ctx.storage.put('gameData', newGameData);
-			console.log('✅ Successfully updated all users data structure');
-			
-			return new Response(JSON.stringify({ success: true, updatedCount: users.length }), { 
-				headers: { 'Content-Type': 'application/json' } 
-			});
 		}
 
 		return new Response('Method not allowed', { status: 405 });
