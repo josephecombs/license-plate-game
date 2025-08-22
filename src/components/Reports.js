@@ -368,11 +368,59 @@ function Reports() {
             </div>
             
             <div style={{ color: '#ccc', lineHeight: '1.6' }}>
-              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+              <p style={{ marginBottom: '1.5rem' }}>
+                Administrative actions for user: <strong>{selectedUser?.email}</strong>
+              </p>
               
-              <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+              <button
+                onClick={() => {
+                  const confirmBan = window.confirm(
+                    `Are you sure you want to ban ${selectedUser?.email} and purge all their information from the system?\n\n` +
+                    `This action will:\n` +
+                    `• Mark the user as banned\n` +
+                    `• Remove all their game data\n` +
+                    `• Prevent future access to the system\n\n`
+                  );
+                  
+                  if (confirmBan) {
+                    // TODO: Implement ban user API call
+                    // Route: POST /ban-user
+                    // Body: { email: selectedUser.email }
+                    alert(`User ${selectedUser?.email} has been banned. API endpoint to be implemented.`);
+                    closeModal();
+                  }
+                }}
+                style={{
+                  background: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '6px',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  width: '100%'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#d32f2f';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#f44336';
+                }}
+              >
+                🚫 Ban User & Purge Data
+              </button>
               
-              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+              <p style={{ 
+                fontSize: '0.8rem', 
+                color: '#888', 
+                marginTop: '1rem',
+                textAlign: 'center',
+                fontStyle: 'italic'
+              }}>
+                This action will permanently remove the user and all associated data.
+              </p>
             </div>
           </div>
         </div>
@@ -380,7 +428,7 @@ function Reports() {
 
       {/* Banned Users Section */}
       {(() => {
-        const bannedUsers = gameData.filter(user => user.banned === true);
+        const bannedUsers = gameData.filter(user => user.bannedAt && typeof user.bannedAt === 'string');
         if (bannedUsers.length > 0 && adminStatus === 'Authenticated as Admin') {
           return (
             <section>
@@ -397,6 +445,7 @@ function Reports() {
                 {bannedUsers.map((user) => {
                   const visitedStates = user.gameData?.visitedStates || [];
                   const progress = user.gameData?.progress || '0.00';
+                  const bannedDate = new Date(user.bannedAt).toLocaleDateString();
                   
                   return (
                     <div key={user.email} style={{
@@ -437,6 +486,9 @@ function Reports() {
                             color: '#f44336'
                           }}>
                             {user.email}
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: '#888' }}>
+                            Banned on: {bannedDate}
                           </div>
                           <div style={{ fontSize: '0.9rem', color: '#888' }}>
                             {visitedStates.length} states spotted
