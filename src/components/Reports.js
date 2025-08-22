@@ -26,6 +26,8 @@ function Reports() {
   const [monthYear, setMonthYear] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const sessionId = Cookies.get('session');
 
   useEffect(() => {
@@ -72,6 +74,16 @@ function Reports() {
     if (num >= 60) return '#FF9800'; // Orange
     if (num >= 40) return '#FFC107'; // Yellow
     return '#F44336'; // Red
+  };
+
+  const openModal = (user) => {
+    setSelectedUser(user);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedUser(null);
   };
 
   if (loading) {
@@ -190,13 +202,41 @@ function Reports() {
                       alignItems: 'center',
                       marginBottom: '1rem'
                     }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.25rem' }}>
-                          {user.email}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div>
+                          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                            {user.email}
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: '#888' }}>
+                            {visitedStates.length} states spotted
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.9rem', color: '#888' }}>
-                          {visitedStates.length} states spotted
-                        </div>
+                        {adminStatus === 'Authenticated as Admin' && (
+                          <button
+                            onClick={() => openModal(user)}
+                            style={{
+                              background: 'rgba(66, 133, 244, 0.1)',
+                              color: '#4285f4',
+                              border: '1px solid rgba(66, 133, 244, 0.3)',
+                              padding: '0.5rem 1rem',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.background = 'rgba(66, 133, 244, 0.2)';
+                              e.target.style.borderColor = 'rgba(66, 133, 244, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = 'rgba(66, 133, 244, 0.1)';
+                              e.target.style.borderColor = 'rgba(66, 133, 244, 0.3)';
+                            }}
+                          >
+                            More Actions
+                          </button>
+                        )}
                       </div>
                       <div style={{
                         background: progressColor,
@@ -274,6 +314,69 @@ function Reports() {
           <strong>Access Level:</strong> {adminStatus === 'Authenticated as Admin' ? 'Administrator (Full Access)' : 'User (Anonymized Data)'}
         </div>
       </section>
+
+      {/* More Actions Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#1a1a1a',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h3 style={{ margin: 0, color: '#fff' }}>
+                More Actions - {selectedUser?.email}
+              </h3>
+              <button
+                onClick={closeModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#888',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  transition: 'color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#fff'}
+                onMouseLeave={(e) => e.target.style.color = '#888'}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ color: '#ccc', lineHeight: '1.6' }}>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+              
+              <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+              
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
