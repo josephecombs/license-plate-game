@@ -373,7 +373,7 @@ function Reports() {
               </p>
               
               <button
-                onClick={() => {
+                onClick={async () => {
                   const confirmBan = window.confirm(
                     `Are you sure you want to ban ${selectedUser?.email} and purge all their information from the system?\n\n` +
                     `This action will:\n` +
@@ -383,11 +383,30 @@ function Reports() {
                   );
                   
                   if (confirmBan) {
-                    // TODO: Implement ban user API call
-                    // Route: POST /ban-user
-                    // Body: { email: selectedUser.email }
-                    alert(`User ${selectedUser?.email} has been banned. API endpoint to be implemented.`);
-                    closeModal();
+                    try {
+                      const response = await fetch(`${API_BASE_URL}/users/ban`, {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': sessionId
+                        },
+                        body: JSON.stringify({ email: selectedUser.email })
+                      });
+                      
+                      if (response.ok) {
+                        const result = await response.json();
+                        alert(`User ${selectedUser.email} has been banned successfully.`);
+                        closeModal();
+                        // Refresh the page to show updated data
+                        window.location.reload();
+                      } else {
+                        const errorData = await response.json();
+                        alert(`Failed to ban user: ${errorData.error || 'Unknown error'}`);
+                      }
+                    } catch (error) {
+                      console.error('Error banning user:', error);
+                      alert(`Error banning user: ${error.message}`);
+                    }
                   }
                 }}
                 style={{

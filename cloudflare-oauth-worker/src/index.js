@@ -150,6 +150,48 @@ export class Game extends DurableObject {
 				});
 			}
 			return new Response(JSON.stringify(users), { headers: { 'Content-Type': 'application/json' } });
+		} else if (url.hostname === 'ban-user') {
+			// Ban user by setting bannedAt to current UTC time
+			const { email } = await request.json();
+			console.log('🚫 Banning user:', email);
+			
+			if (gameData[email]) {
+				gameData[email].bannedAt = new Date().toISOString();
+				await this.ctx.storage.put('gameData', gameData);
+				console.log('✅ User banned:', email, 'at:', gameData[email].bannedAt);
+				
+				return new Response(JSON.stringify({ 
+					success: true, 
+					message: `User ${email} has been banned`,
+					bannedAt: gameData[email].bannedAt
+				}), { headers: { 'Content-Type': 'application/json' } });
+			} else {
+				return new Response(JSON.stringify({ error: 'User not found' }), { 
+					status: 404, 
+					headers: { 'Content-Type': 'application/json' } 
+				});
+			}
+		} else if (url.hostname === 'unban-user') {
+			// Unban user by setting bannedAt to undefined
+			const { email } = await request.json();
+			console.log('✅ Unbanning user:', email);
+			
+			if (gameData[email]) {
+				gameData[email].bannedAt = undefined;
+				await this.ctx.storage.put('gameData', gameData);
+				console.log('✅ User unbanned:', email);
+				
+				return new Response(JSON.stringify({ 
+					success: true, 
+					message: `User ${email} has been unbanned`,
+					bannedAt: gameData[email].bannedAt
+				}), { headers: { 'Content-Type': 'application/json' } });
+			} else {
+				return new Response(JSON.stringify({ error: 'User not found' }), { 
+					status: 404, 
+					headers: { 'Content-Type': 'application/json' } 
+				});
+			}
 		}
 
 		return new Response('Method not allowed', { status: 405 });
@@ -504,6 +546,110 @@ export default {
 				} else {
 					response = new Response(JSON.stringify({ error: 'Invalid session token' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 				}
+			}
+		} else if (url.pathname === '/users/ban') {
+			// Ban user endpoint
+			if (request.method === 'PUT') {
+				const sessionToken = request.headers.get('Authorization');
+				if (!sessionToken) {
+					response = new Response(JSON.stringify({ error: 'No session token provided' }), { 
+						status: 401, 
+						headers: { 'Content-Type': 'application/json' } 
+					});
+				} else {
+					const email = await getEmailFromSessionToken(sessionToken, env);
+					if (!email) {
+						response = new Response(JSON.stringify({ error: 'Invalid session token' }), { 
+							status: 403, 
+							headers: { 'Content-Type': 'application/json' } 
+						});
+					} else {
+						// Check if user is admin
+						const isAdmin = email === 'joseph.e.combs@gmail.com';
+						if (!isAdmin) {
+							response = new Response(JSON.stringify({ error: 'Admin access required' }), { 
+								status: 403, 
+								headers: { 'Content-Type': 'application/json' } 
+							});
+						} else {
+							const { email: userEmail } = await request.json();
+							if (!userEmail) {
+								response = new Response(JSON.stringify({ error: 'Email is required' }), { 
+									status: 400, 
+									headers: { 'Content-Type': 'application/json' } 
+								});
+							} else {
+								// Just update the user's bannedAt to current UTC time
+								const bannedAt = new Date().toISOString();
+								
+								response = new Response(JSON.stringify({ 
+									success: true, 
+									message: `User ${userEmail} has been banned`,
+									bannedAt: bannedAt
+								}), { 
+									headers: { 'Content-Type': 'application/json' } 
+								});
+							}
+						}
+					}
+				}
+			} else {
+				response = new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+					status: 405, 
+					headers: { 'Content-Type': 'application/json' } 
+				});
+			}
+		} else if (url.pathname === '/users/unban') {
+			// Unban user endpoint
+			if (request.method === 'PUT') {
+				const sessionToken = request.headers.get('Authorization');
+				if (!sessionToken) {
+					response = new Response(JSON.stringify({ error: 'No session token provided' }), { 
+						status: 401, 
+						headers: { 'Content-Type': 'application/json' } 
+					});
+				} else {
+					const email = await getEmailFromSessionToken(sessionToken, env);
+					if (!email) {
+						response = new Response(JSON.stringify({ error: 'Invalid session token' }), { 
+							status: 403, 
+							headers: { 'Content-Type': 'application/json' } 
+						});
+					} else {
+						// Check if user is admin
+						const isAdmin = email === 'joseph.e.combs@gmail.com';
+						if (!isAdmin) {
+							response = new Response(JSON.stringify({ error: 'Admin access required' }), { 
+								status: 403, 
+								headers: { 'Content-Type': 'application/json' } 
+							});
+						} else {
+							const { email: userEmail } = await request.json();
+							if (!userEmail) {
+								response = new Response(JSON.stringify({ error: 'Email is required' }), { 
+									status: 400, 
+									headers: { 'Content-Type': 'application/json' } 
+								});
+							} else {
+								// Just update the user's bannedAt to undefined
+								const bannedAt = undefined;
+								
+								response = new Response(JSON.stringify({ 
+									success: true, 
+									message: `User ${userEmail} has been unbanned`,
+									bannedAt: bannedAt
+								}), { 
+									headers: { 'Content-Type': 'application/json' } 
+								});
+							}
+						}
+					}
+				}
+			} else {
+				response = new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+					status: 405, 
+					headers: { 'Content-Type': 'application/json' } 
+				});
 			}
 		} else {
 			response = new Response('Hello World!');

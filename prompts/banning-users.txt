@@ -11,8 +11,15 @@ on the reports page, if the user has the attribute banned: true, add a list at t
 step 3
 inside the modal, remove the lorem and add a button with an alert confirmation that asks an admin to confirm if they'd like to ban a user and purge their info from the system pick a route that makes sense but don't implement controller or anything quite yet
 
-step 4
+step 3a
+add the attribute "bannedAt" to user and change the logic of the reports page to filter for the bannedAt timestamp. rather than banned. you may need to write a wrangler migration so tell me how to add this property to a durable object USER
 
+step 4
+implement 2 new endpoints: "users/ban", and "users/unban" (maybe nested somewhere idk) - PUT json with the format:
+
+{email: email_address@here.com}
+
+make the endpoints actually toggle the state of the "bannedAt" attribute on to the UTC time or undefined depending on if youre banning or unbanning. 
 
 
 
