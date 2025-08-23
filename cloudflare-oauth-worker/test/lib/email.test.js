@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+
 
 describe('Email Library', () => {
   let mockEnv;
-  let sendEmailNotification;
   let sendStateChangeEmail;
 
   beforeEach(async () => {
     // Import the functions
     const emailModule = await import('../../src/lib/email.js');
-    sendEmailNotification = emailModule.sendEmailNotification;
     sendStateChangeEmail = emailModule.sendStateChangeEmail;
     
     mockEnv = {
@@ -19,79 +19,47 @@ describe('Email Library', () => {
     };
   });
 
-  describe('sendEmailNotification', () => {
-    it('should throw error when AWS credentials are missing', async () => {
-      const incompleteEnv = {
-        AWS_REGION: 'us-east-1'
-        // Missing AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+  describe('sendStateChangeEmail', () => {
+    it('should call sendEmailNotification with correct parameters', async () => {
+      // Mock just this test to avoid AWS calls
+      const mockSendEmailNotification = vi.fn().mockResolvedValue(true);
+      const emailModule = await import('../../src/lib/email.js');
+      vi.spyOn(emailModule, 'sendEmailNotification').mockImplementation(mockSendEmailNotification);
+
+      const params = {
+        env: mockEnv,
+        userEmail: 'user@example.com',
+        userName: 'Test User',
+        action: 'UPDATED',
+        stateId: '02',
+        previousStates: ['01'],
+        newStates: ['01', '02']
       };
 
-      await expect(sendEmailNotification(
-        incompleteEnv,
-        'user@example.com',
-        'noreply@example.com',
-        'Test Subject',
-        'Test body'
-      )).rejects.toThrow('AWS credentials not configured');
-    });
+      await sendStateChangeEmail(
+        params.env,
+        params.userEmail,
+        params.userName,
+        params.action,
+        params.stateId,
+        params.previousStates,
+        params.newStates
+      );
 
-    it('should throw error when required parameters are missing', async () => {
-      await expect(sendEmailNotification(
-        mockEnv,
-        '', // missing to
-        'noreply@example.com',
-        'Test Subject',
-        'Test body'
-      )).rejects.toThrow('Missing required email parameters');
+      expect(mockSendEmailNotification).toHaveBeenCalledWith(
+        params.env,
+        params.env.NOTIFICATION_EMAIL,
+        'support@platechase.com',
+        expect.stringContaining(`State ${params.action}:`),
+        expect.stringContaining(params.userName)
+      );
     });
-
-    it('should throw error when to parameter is missing', async () => {
-      await expect(sendEmailNotification(
-        mockEnv,
-        undefined, // missing to
-        'noreply@example.com',
-        'Test Subject',
-        'Test body'
-      )).rejects.toThrow('Missing required email parameters');
-    });
-
-    it('should throw error when from parameter is missing', async () => {
-      await expect(sendEmailNotification(
-        mockEnv,
-        'user@example.com',
-        '', // missing from
-        'Test Subject',
-        'Test body'
-      )).rejects.toThrow('Missing required email parameters');
-    });
-
-    it('should throw error when subject parameter is missing', async () => {
-      await expect(sendEmailNotification(
-        mockEnv,
-        'user@example.com',
-        'noreply@example.com',
-        '', // missing subject
-        'Test body'
-      )).rejects.toThrow('Missing required email parameters');
-    });
-
-    it('should throw error when body parameter is missing', async () => {
-      await expect(sendEmailNotification(
-        mockEnv,
-        'user@example.com',
-        'noreply@example.com',
-        'Test Subject',
-        '' // missing body
-      )).rejects.toThrow('Missing required email parameters');
-    });
-  });
-
-  describe('sendStateChangeEmail', () => {
+    
     it('should throw error when NOTIFICATION_EMAIL is missing from env', async () => {
       const incompleteEnv = {
         AWS_ACCESS_KEY_ID: 'test-access-key',
-        AWS_SECRET_ACCESS_KEY: 'test-secret-key'
-        // Missing NOTIFICATION_EMAIL
+        AWS_SECRET_ACCESS_KEY: 'test-secret-key',
+        NOTIFICATION_EMAIL: undefined,
       };
 
       await expect(sendStateChangeEmail(

@@ -5,21 +5,19 @@ import { STATE_NAMES } from '../constants/states.js';
  * Send email notification using AWS SES
  */
 export async function sendEmailNotification(env, to, from, subject, body) {
-	// Validate required parameters
-	// console.log('Arguments:', { to, from, subject, body });
-	if (!to || !from || !subject || !body) {
-		console.log('actually hitting this');
-		const errMessage = `Missing required email parameters: to=${to}, from=${from}, subject=${subject}, body=${body}`;
-		console.log({errMessage})
-		throw new Error(errMessage);
-	}
-
-	// throw 'qwer';
-
 	// Validate AWS credentials
 	const accessKey = env.AWS_ACCESS_KEY_ID;
 	const secretKey = env.AWS_SECRET_ACCESS_KEY;
 	const region = 'us-east-1'; // Change this to your SES region
+
+	if (!to || !from || !subject || !body) {
+		const missingParams = [];
+		if (!to) missingParams.push(`to=${to}`);
+		if (!from) missingParams.push(`from=${from}`);
+		if (!subject) missingParams.push(`subject=${subject}`);
+		if (!body) missingParams.push(`body=${body}`);
+		throw new Error(`Missing required email parameters: ${missingParams.join(', ')}`);
+	}
 	
 	if (!accessKey || !secretKey) {
 		throw new Error('AWS credentials not configured: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required');
@@ -70,7 +68,10 @@ export async function sendEmailNotification(env, to, from, subject, body) {
  */
 export async function sendStateChangeEmail(env, userEmail, userName, action, stateId, previousStates, newStates) {
 	// Validate required parameters
-	if (!userEmail || !userName || !action || !stateId) {
+
+	// console.log("ASdf");
+	// throw 'asdf';
+	if (!userEmail || !userName || !action || !stateId ) {
 		throw new Error('Missing required parameters');
 	}
 
