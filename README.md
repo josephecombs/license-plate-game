@@ -1,52 +1,49 @@
 # PlateChase - License Plate Game
 
-A React-based license plate game with Cloudflare OAuth worker backend.
+This project consists of two main components:
 
-## Development
+1. **Frontend React App** (root directory) - A GitHub Pages hosted React application
+2. **Backend Cloudflare Worker** (`cloudflare-oauth-worker/` directory) - OAuth authentication and backend services using Cloudflare Workers and Durable Objects
 
-### React App
+## Local Development Setup
+
+### Prerequisites
+- Node.js 20.0.0 or higher
+- npm
+- Cloudflare account (for worker deployment)
+
+### Step 1: Start the React Frontend
+Open your first terminal tab and run:
 ```bash
 npm start
 ```
-Runs the app in development mode at [http://localhost:3000](http://localhost:3000).
+This will start the React app at [http://localhost:3000](http://localhost:3000).
 
-### Cloudflare Worker
+### Step 2: Start the Cloudflare Worker Backend
+Open your second terminal tab and run:
 ```bash
 cd cloudflare-oauth-worker
 npx wrangler dev
 ```
-Starts the local development server using Miniflare at `http://localhost:8787`.
+This starts the local development server using Miniflare at `http://localhost:8787`.
+
+## Project Structure
+
+- **Root directory**: React frontend application
+- **`cloudflare-oauth-worker/`**: Cloudflare Worker backend with OAuth and Durable Objects
+- **`public/`**: Static assets and HTML files
+- **`src/`**: React source code
+- **`scripts/`**: Build and deployment utilities
 
 ## Deployment
 
-### Deploy the Site
+### Frontend (GitHub Pages)
 ```bash
 npm run deploy
 ```
-This command:
-1. Builds the React app
-2. Injects necessary scripts
-3. Deploys to GitHub Pages at www.platechase.com
-4. Deploys the Cloudflare worker
 
-### Manual Deployment
-
-#### React App to GitHub Pages
-```bash
-npm run build
-npm run predeploy
-gh-pages -d build --cname www.platechase.com
-```
-
-#### Cloudflare Worker
+### Backend (Cloudflare Worker)
 ```bash
 cd cloudflare-oauth-worker
 npx wrangler deploy
 ```
-
-## Requirements
-
-- Node.js 20.0.0 or higher
-- npm
-- GitHub Pages (for site deployment)
-- Cloudflare account (for worker deployment)

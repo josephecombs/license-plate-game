@@ -1,0 +1,10 @@
+-this project has problems. this series of prompts will deal with these issues
+
+1.) Local Development
+-this app is developed as a github create-react-app page from its root, and as a cloudflare worker / durable objects thing from within cloudflare-oauth-worker. I need you to very clearly explain this in the README.md. Delete all boilerplate and explain this. 
+-most of this shit is already set up but I want a CONSISTENT, BULLETPROOF PROCESS THAT DOESNT BREAK BETWEEN MACHINE RESTARTS / CURSOR RESTARTS
+
+Explain how I can restart my terminal, open 2 tabs and get the project running on localhost:3000 with like npm start and npx wrangler whatever. I will implement the steps you propose in the readme and report any issues. It's critical to go step by step and only tell me to do one thing at a time, so I can report outcomes as we go. don't spam a zillion steps at each response please. thanks
+
+2.) index.js cleanup
+Currently, this file serves every single controller action in the site. I need you to make a more restful structure (maybe some new files, and a /shared lib to host shared functions such as Auth)
