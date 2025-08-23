@@ -12,7 +12,14 @@ export async function getEmailFromSessionToken(sessionToken, env) {
 	const userSessionObj = env.USER_SESSIONS.get(userSessionId);
 	const sessionResponse = await userSessionObj.fetch(new Request('https://get-user-session'));
 	const sessionData = await sessionResponse.json();
-	return sessionData.email;
+	
+	// Handle null or undefined session data
+	if (!sessionData) {
+		return null;
+	}
+	
+	// Return null if email is missing or undefined
+	return sessionData.email || null;
 }
 
 /**

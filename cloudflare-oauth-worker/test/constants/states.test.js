@@ -23,7 +23,8 @@ describe('States Constants', () => {
     it('should have consistent format (2-letter codes to full names)', () => {
       Object.entries(STATES).forEach(([code, name]) => {
         expect(code).toMatch(/^[A-Z]{2}$/);
-        expect(name).toMatch(/^[A-Z][a-z\s]+$/);
+        // State names should start with uppercase letter and contain letters and spaces
+        expect(name).toMatch(/^[A-Z][a-zA-Z\s]+$/);
       });
     });
   });

@@ -70,7 +70,7 @@ describe('CORS Library', () => {
       });
 
       const response = setCORSHeaders(mockResponse, mockEnv, request);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBeUndefined();
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
       expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, OPTIONS, PUT');
       expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization');
     });
@@ -84,7 +84,7 @@ describe('CORS Library', () => {
       });
 
       const response = setCORSHeaders(mockResponse, mockEnv, request);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBeUndefined();
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
       expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, OPTIONS, PUT');
       expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization');
     });
@@ -99,7 +99,7 @@ describe('CORS Library', () => {
       });
 
       const response = setCORSHeaders(mockResponse, mockEnv, request);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBeUndefined();
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
       expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, OPTIONS, PUT');
       expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization');
     });

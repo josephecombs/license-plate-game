@@ -62,7 +62,7 @@ describe('Auth Library', () => {
         });
 
         const result = await getEmailFromSessionToken('invalid-session-id', mockEnv);
-        expect(result).toBeUndefined();
+        expect(result).toBeNull();
       });
 
       it('should handle null session data', async () => {
@@ -71,7 +71,7 @@ describe('Auth Library', () => {
         });
 
         const result = await getEmailFromSessionToken('null-session-id', mockEnv);
-        expect(result).toBeUndefined();
+        expect(result).toBeNull();
       });
     });
   });

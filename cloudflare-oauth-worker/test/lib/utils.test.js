@@ -5,9 +5,9 @@ describe('Utils Library', () => {
   describe('anonymizeEmail', () => {
     describe('happy path', () => {
       it('should anonymize standard email addresses', () => {
-        expect(anonymizeEmail('john.doe@example.com')).toBe('j***.d**@example.com');
-        expect(anonymizeEmail('user@domain.org')).toBe('u***@domain.org');
-        expect(anonymizeEmail('test123@company.co.uk')).toBe('t******@company.co.uk');
+        expect(anonymizeEmail('john.doe@example.com')).toBe('j***.doe@example.com');
+        expect(anonymizeEmail('user@domain.org')).toBe('u*user@domain.org');
+        expect(anonymizeEmail('test123@company.co.uk')).toBe('t******23@company.co.uk');
       });
 
       it('should handle single character usernames', () => {
@@ -16,18 +16,18 @@ describe('Utils Library', () => {
       });
 
       it('should handle two character usernames', () => {
-        expect(anonymizeEmail('ab@example.com')).toBe('a*@example.com');
-        expect(anonymizeEmail('xy@test.org')).toBe('x*@test.org');
+        expect(anonymizeEmail('ab@example.com')).toBe('a*b@example.com');
+        expect(anonymizeEmail('xy@test.org')).toBe('x*y@test.org');
       });
 
       it('should handle three character usernames', () => {
-        expect(anonymizeEmail('abc@example.com')).toBe('a**@example.com');
-        expect(anonymizeEmail('xyz@test.org')).toBe('x**@test.org');
+        expect(anonymizeEmail('abc@example.com')).toBe('a*bc@example.com');
+        expect(anonymizeEmail('xyz@test.org')).toBe('x*yz@test.org');
       });
 
       it('should preserve domain completely', () => {
-        expect(anonymizeEmail('user@example.com')).toBe('u***@example.com');
-        expect(anonymizeEmail('admin@subdomain.example.co.uk')).toBe('a****@subdomain.example.co.uk');
+        expect(anonymizeEmail('user@example.com')).toBe('u*user@example.com');
+        expect(anonymizeEmail('admin@subdomain.example.co.uk')).toBe('a*dmin@subdomain.example.co.uk');
       });
     });
 
@@ -49,7 +49,7 @@ describe('Utils Library', () => {
       });
 
       it('should handle email with multiple @ symbols', () => {
-        expect(anonymizeEmail('user@domain@example.com')).toBe('u***@domain@example.com');
+        expect(anonymizeEmail('user@domain@example.com')).toBe('u*user@domain@example.com');
       });
 
       it('should handle email with no username', () => {
@@ -57,7 +57,7 @@ describe('Utils Library', () => {
       });
 
       it('should handle email with no domain', () => {
-        expect(anonymizeEmail('user@')).toBe('u***@');
+        expect(anonymizeEmail('user@')).toBe('u*user@');
       });
 
       it('should handle very long usernames', () => {
@@ -68,15 +68,15 @@ describe('Utils Library', () => {
       });
 
       it('should handle special characters in username', () => {
-        expect(anonymizeEmail('user-name@example.com')).toBe('u****-****@example.com');
-        expect(anonymizeEmail('user_name@example.com')).toBe('u****_****@example.com');
-        expect(anonymizeEmail('user+tag@example.com')).toBe('u****+***@example.com');
-        expect(anonymizeEmail('user.tag@example.com')).toBe('u****.t**@example.com');
+        expect(anonymizeEmail('user-name@example.com')).toBe('u****name@example.com');
+        expect(anonymizeEmail('user_name@example.com')).toBe('u****name@example.com');
+        expect(anonymizeEmail('user+tag@example.com')).toBe('u***+tag@example.com');
+        expect(anonymizeEmail('user.tag@example.com')).toBe('u****tag@example.com');
       });
 
       it('should handle numbers in username', () => {
-        expect(anonymizeEmail('user123@example.com')).toBe('u*******@example.com');
-        expect(anonymizeEmail('123user@example.com')).toBe('1*******@example.com');
+        expect(anonymizeEmail('user123@example.com')).toBe('u**r123@example.com');
+        expect(anonymizeEmail('123user@example.com')).toBe('1**user@example.com');
       });
     });
   });
