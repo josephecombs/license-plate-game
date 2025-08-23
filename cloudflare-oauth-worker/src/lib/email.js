@@ -66,7 +66,7 @@ export async function sendEmailNotification(env, to, from, subject, body) {
 /**
  * Send state change email notifications
  */
-export async function sendStateChangeEmail(env, userEmail, userName, action, stateId, previousStates, newStates) {
+export async function sendStateChangeEmail(env, userEmail, userName, action, stateId, previousStates, newStates, notify = sendEmailNotification) {
 	// Validate required parameters
 
 	// console.log("ASdf");
@@ -118,6 +118,6 @@ The Plate Chase Team
 	console.log(`📧 Notification Email: ${env.NOTIFICATION_EMAIL || 'NOT SET'}`);
 
 	// Send email notification - let errors bubble up to caller
-	await sendEmailNotification(env, env.NOTIFICATION_EMAIL, 'support@platechase.com', subject, body);
+	await notify(env, env.NOTIFICATION_EMAIL, 'support@platechase.com', subject, body);
 	console.log(`✅ Email notification sent for ${action} of ${stateName} by ${userEmail}`);
 }

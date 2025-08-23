@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-
-
 describe('Email Library', () => {
   let mockEnv;
   let sendStateChangeEmail;
@@ -20,12 +18,9 @@ describe('Email Library', () => {
   });
 
   describe('sendStateChangeEmail', () => {
-    it('should call sendEmailNotification with correct parameters', async () => {
-      // Mock just this test to avoid AWS calls
-      const mockSendEmailNotification = vi.fn().mockResolvedValue(true);
-      const emailModule = await import('../../src/lib/email.js');
-      vi.spyOn(emailModule, 'sendEmailNotification').mockImplementation(mockSendEmailNotification);
-
+    it('should call sendEmailNotification with correct parameters', async () => { 
+      const notify = vi.fn().mockResolvedValue(true);
+    
       const params = {
         env: mockEnv,
         userEmail: 'user@example.com',
@@ -43,10 +38,11 @@ describe('Email Library', () => {
         params.action,
         params.stateId,
         params.previousStates,
-        params.newStates
+        params.newStates,
+        notify,
       );
 
-      expect(mockSendEmailNotification).toHaveBeenCalledWith(
+      expect(notify).toHaveBeenCalledWith(
         params.env,
         params.env.NOTIFICATION_EMAIL,
         'support@platechase.com',
