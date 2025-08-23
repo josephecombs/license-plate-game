@@ -21,12 +21,21 @@
     "start": "react-scripts start",
     "build": "react-scripts build && node scripts/inject-scripts.js",
     "test": "react-scripts test",
-    "test:worker": "jest cloudflare-oauth-worker/src/index.test.js",
+    "test:worker:jest": "jest cloudflare-oauth-worker/src/index.test.js",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "source ~/.nvm/nvm.sh && nvm use 18.20.8 && gh-pages -d build --cname www.platechase.com && (cd cloudflare-oauth-worker && npx wrangler deploy)",
     "resize-social-images": "node scripts/resize-social-images.js",
-    "dev": "chmod +x scripts/dev-setup.sh && ./scripts/dev-setup.sh"
+    "dev": "chmod +x scripts/dev-setup.sh && ./scripts/dev-setup.sh",
+    "test:all": "cd cloudflare-oauth-worker && npm run test:all",
+    "test:worker": "cd cloudflare-oauth-worker && npm run test:run",
+    "test:worker:watch": "cd cloudflare-oauth-worker && npm run test:watch",
+    "test:worker:coverage": "cd cloudflare-oauth-worker && npm run test:coverage",
+    "test:worker:constants": "cd cloudflare-oauth-worker && npm run test:constants",
+    "test:worker:lib": "cd cloudflare-oauth-worker && npm run test:lib",
+    "test:worker:routes": "cd cloudflare-oauth-worker && npm run test:routes",
+    "test:worker:durable-objects": "cd cloudflare-oauth-worker && npm run test:durable-objects",
+    "test:worker:router": "cd cloudflare-oauth-worker && npm run test:router"
   },
   "homepage": "https://www.platechase.com",
   "eslintConfig": {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { sendEmail } from '../../src/lib/email.js';
+import { sendEmailNotification, sendStateChangeEmail } from '../../src/lib/email.js';
 
 // Mock AWS SES client
 vi.mock('@aws-sdk/client-ses', () => ({
@@ -18,7 +18,7 @@ describe('Email Library', () => {
       AWS_ACCESS_KEY_ID: 'test-access-key',
       AWS_SECRET_ACCESS_KEY: 'test-secret-key',
       AWS_REGION: 'us-east-1',
-      FROM_EMAIL: 'noreply@example.com'
+      NOTIFICATION_EMAIL: 'admin@example.com'
     };
 
     mockSESClient = {
@@ -29,246 +29,218 @@ describe('Email Library', () => {
     vi.clearAllMocks();
   });
 
-  describe('happy path', () => {
-    it('should send email successfully with valid parameters', async () => {
-      const mockSendResponse = {
-        MessageId: 'test-message-id-123'
-      };
+  describe('sendEmailNotification', () => {
+    describe('happy path', () => {
+      it('should send email successfully with valid parameters', async () => {
+        const mockSendResponse = {
+          MessageId: 'test-message-id-123'
+        };
 
-      mockSESClient.send.mockResolvedValue(mockSendResponse);
+        // Mock the SESClient constructor to return our mock
+        const { SESClient } = await import('@aws-sdk/client-ses');
+        SESClient.mockImplementation(() => ({
+          send: vi.fn().mockResolvedValue(mockSendResponse)
+        }));
 
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        'Test Subject',
-        'Test email body'
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.messageId).toBe('test-message-id-123');
-    });
-
-    it('should send email with HTML content', async () => {
-      const mockSendResponse = {
-        MessageId: 'html-message-id-456'
-      };
-
-      mockSESClient.send.mockResolvedValue(mockSendResponse);
-
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        'HTML Subject',
-        '<h1>HTML Email</h1><p>This is HTML content</p>',
-        true
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.messageId).toBe('html-message-id-456');
-    });
-
-    it('should send email with custom from address', async () => {
-      const mockSendResponse = {
-        MessageId: 'custom-from-message-id-789'
-      };
-
-      mockSESClient.send.mockResolvedValue(mockSendResponse);
-
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        'Custom From Subject',
-        'Email with custom from',
-        false,
-        'custom@example.com'
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.messageId).toBe('custom-from-message-id-789');
-    });
-  });
-
-  describe('edge cases', () => {
-    it('should handle missing AWS credentials gracefully', async () => {
-      const incompleteEnv = {
-        AWS_REGION: 'us-east-1',
-        FROM_EMAIL: 'noreply@example.com'
-        // Missing AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
-      };
-
-      const result = await sendEmail(
-        incompleteEnv,
-        'user@example.com',
-        'Test Subject',
-        'Test body'
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('AWS credentials');
-    });
-
-    it('should handle missing FROM_EMAIL gracefully', async () => {
-      const incompleteEnv = {
-        AWS_ACCESS_KEY_ID: 'test-access-key',
-        AWS_SECRET_ACCESS_KEY: 'test-secret-key',
-        AWS_REGION: 'us-east-1'
-        // Missing FROM_EMAIL
-      };
-
-      const result = await sendEmail(
-        incompleteEnv,
-        'user@example.com',
-        'Test Subject',
-        'Test body'
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('FROM_EMAIL');
-    });
-
-    it('should handle invalid email addresses', async () => {
-      const invalidEmails = [
-        '',
-        'invalid-email',
-        '@example.com',
-        'user@',
-        'user@.com',
-        'user..name@example.com'
-      ];
-
-      for (const invalidEmail of invalidEmails) {
-        const result = await sendEmail(
+        const result = await sendEmailNotification(
           mockEnv,
-          invalidEmail,
+          'user@example.com',
+          'noreply@example.com',
+          'Test Subject',
+          'Test email body'
+        );
+
+        expect(result).toBe(true);
+      });
+
+      it('should handle SES client errors gracefully', async () => {
+        // Mock the SESClient constructor to return our mock
+        const { SESClient } = await import('@aws-sdk/client-ses');
+        SESClient.mockImplementation(() => ({
+          send: vi.fn().mockRejectedValue(new Error('SES service error'))
+        }));
+
+        const result = await sendEmailNotification(
+          mockEnv,
+          'user@example.com',
+          'noreply@example.com',
           'Test Subject',
           'Test body'
         );
 
-        expect(result.success).toBe(false);
-        expect(result.error).toContain('Invalid email');
-      }
+        expect(result).toBe(false);
+      });
     });
 
-    it('should handle empty subject', async () => {
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        '',
-        'Test body'
-      );
+    describe('edge cases', () => {
+      it('should handle missing AWS credentials gracefully', async () => {
+        const incompleteEnv = {
+          AWS_REGION: 'us-east-1'
+          // Missing AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+        };
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Subject');
+        const result = await sendEmailNotification(
+          incompleteEnv,
+          'user@example.com',
+          'noreply@example.com',
+          'Test Subject',
+          'Test body'
+        );
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle empty email parameters', async () => {
+        const result = await sendEmailNotification(
+          mockEnv,
+          '',
+          'noreply@example.com',
+          'Test Subject',
+          'Test body'
+        );
+
+        expect(result).toBe(false);
+      });
+    });
+  });
+
+  describe('sendStateChangeEmail', () => {
+    describe('happy path', () => {
+      it('should send state change email successfully', async () => {
+        // Mock the sendEmailNotification function
+        const { sendEmailNotification } = await import('../../src/lib/email.js');
+        vi.spyOn(await import('../../src/lib/email.js'), 'sendEmailNotification')
+          .mockResolvedValue(true);
+
+        const result = await sendStateChangeEmail(
+          mockEnv,
+          'user@example.com',
+          'Test User',
+          'ADDED',
+          '01',
+          [],
+          ['01']
+        );
+
+        expect(result).toBeUndefined(); // Function doesn't return anything
+      });
+
+      it('should handle different state actions', async () => {
+        const actions = ['ADDED', 'REMOVED', 'UPDATED'];
+        
+        for (const action of actions) {
+          const result = await sendStateChangeEmail(
+            mockEnv,
+            'user@example.com',
+            'Test User',
+            action,
+            '01',
+            [],
+            ['01']
+          );
+
+          expect(result).toBeUndefined();
+        }
+      });
+
+      it('should handle different state IDs', async () => {
+        const stateIds = ['01', '06', '36', '48']; // AL, CA, NY, TX
+        
+        for (const stateId of stateIds) {
+          const result = await sendStateChangeEmail(
+            mockEnv,
+            'user@example.com',
+            'Test User',
+            'ADDED',
+            stateId,
+            [],
+            [stateId]
+          );
+
+          expect(result).toBeUndefined();
+        }
+      });
     });
 
-    it('should handle empty body', async () => {
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        'Test Subject',
-        ''
-      );
+    describe('edge cases', () => {
+      it('should handle unknown state ID', async () => {
+        const result = await sendStateChangeEmail(
+          mockEnv,
+          'user@example.com',
+          'Test User',
+          'ADDED',
+          '99', // Unknown state ID
+          [],
+          ['99']
+        );
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Body');
-    });
+        expect(result).toBeUndefined();
+      });
 
-    it('should handle SES client errors', async () => {
-      const mockError = new Error('SES service error');
-      mockSESClient.send.mockRejectedValue(mockError);
+      it('should handle empty user name', async () => {
+        const result = await sendStateChangeEmail(
+          mockEnv,
+          'user@example.com',
+          '', // Empty user name
+          'ADDED',
+          '01',
+          [],
+          ['01']
+        );
 
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        'Test Subject',
-        'Test body'
-      );
+        expect(result).toBeUndefined();
+      });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('SES service error');
-    });
+      it('should handle missing notification email in env', async () => {
+        const incompleteEnv = {
+          AWS_ACCESS_KEY_ID: 'test-access-key',
+          AWS_SECRET_ACCESS_KEY: 'test-secret-key'
+          // Missing NOTIFICATION_EMAIL
+        };
 
-    it('should handle network timeouts', async () => {
-      const mockTimeoutError = new Error('Request timeout');
-      mockTimeoutError.name = 'TimeoutError';
-      mockSESClient.send.mockRejectedValue(mockTimeoutError);
+        const result = await sendStateChangeEmail(
+          incompleteEnv,
+          'user@example.com',
+          'Test User',
+          'ADDED',
+          '01',
+          [],
+          ['01']
+        );
 
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        'Test Subject',
-        'Test body'
-      );
+        expect(result).toBeUndefined();
+      });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Request timeout');
-    });
+      it('should handle empty previous and new states arrays', async () => {
+        const result = await sendStateChangeEmail(
+          mockEnv,
+          'user@example.com',
+          'Test User',
+          'ADDED',
+          '01',
+          [], // Empty previous states
+          [] // Empty new states
+        );
 
-    it('should handle very long subject lines', async () => {
-      const longSubject = 'A'.repeat(1000);
-      
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        longSubject,
-        'Test body'
-      );
+        expect(result).toBeUndefined();
+      });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Subject too long');
-    });
+      it('should handle large state arrays', async () => {
+        const largePreviousStates = Array.from({ length: 50 }, (_, i) => String(i + 1).padStart(2, '0'));
+        const largeNewStates = Array.from({ length: 51 }, (_, i) => String(i + 1).padStart(2, '0'));
 
-    it('should handle very long email bodies', async () => {
-      const longBody = 'A'.repeat(100000); // Very long body
-      
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        'Test Subject',
-        longBody
-      );
+        const result = await sendStateChangeEmail(
+          mockEnv,
+          'user@example.com',
+          'Test User',
+          'ADDED',
+          '01',
+          largePreviousStates,
+          largeNewStates
+        );
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Body too long');
-    });
-
-    it('should handle special characters in subject and body', async () => {
-      const specialSubject = 'Subject with special chars: !@#$%^&*()_+-=[]{}|;:,.<>?';
-      const specialBody = 'Body with special chars: !@#$%^&*()_+-=[]{}|;:,.<>?\nNew line\n\tTab';
-
-      const mockSendResponse = {
-        MessageId: 'special-chars-message-id'
-      };
-
-      mockSESClient.send.mockResolvedValue(mockSendResponse);
-
-      const result = await sendEmail(
-        mockEnv,
-        'user@example.com',
-        specialSubject,
-        specialBody
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.messageId).toBe('special-chars-message-id');
-    });
-
-    it('should handle multiple recipients', async () => {
-      const mockSendResponse = {
-        MessageId: 'multiple-recipients-message-id'
-      };
-
-      mockSESClient.send.mockResolvedValue(mockSendResponse);
-
-      const result = await sendEmail(
-        mockEnv,
-        'user1@example.com,user2@example.com,user3@example.com',
-        'Multiple Recipients',
-        'Email to multiple users'
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.messageId).toBe('multiple-recipients-message-id');
+        expect(result).toBeUndefined();
+      });
     });
   });
 });

@@ -14,24 +14,31 @@ if [ ! -d "cloudflare-oauth-worker" ]; then
     exit 1
 fi
 
-# Change to the cloudflare-oauth-worker directory
-cd cloudflare-oauth-worker
+# Check if we're in the right directory
+if [ ! -f "package.json" ]; then
+    echo "❌ Error: Please run this script from the root directory"
+    echo "   Expected to find 'package.json' file"
+    exit 1
+fi
 
-echo "📁 Running tests from: $(pwd)"
+echo "📁 Root directory: $(pwd)"
+echo "📁 Cloudflare worker directory: $(pwd)/cloudflare-oauth-worker"
 echo ""
 
-# Check if node_modules exists
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing dependencies..."
+# Check if cloudflare-oauth-worker has node_modules
+if [ ! -d "cloudflare-oauth-worker/node_modules" ]; then
+    echo "📦 Installing cloudflare-oauth-worker dependencies..."
+    cd cloudflare-oauth-worker
     npm install
+    cd ..
     echo ""
 fi
 
-# Run all tests
-echo "🚀 Starting test suite..."
+# Run all tests using the root npm script
+echo "🚀 Starting test suite from root directory..."
 echo ""
 
-# Run the comprehensive test runner
+# Run the comprehensive test runner using root npm script
 npm run test:all
 
 # Capture exit code

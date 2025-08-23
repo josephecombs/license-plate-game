@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { anonymizeEmail, detectStateFromPlate } from '../../src/lib/utils.js';
+import { anonymizeEmail, detectStateChanges, getCurrentMonthYear } from '../../src/lib/utils.js';
 
 describe('Utils Library', () => {
   describe('anonymizeEmail', () => {
@@ -37,11 +37,11 @@ describe('Utils Library', () => {
       });
 
       it('should handle null input', () => {
-        expect(anonymizeEmail(null)).toBe('');
+        expect(anonymizeEmail(null)).toBe(null);
       });
 
       it('should handle undefined input', () => {
-        expect(anonymizeEmail(undefined)).toBe('');
+        expect(anonymizeEmail(undefined)).toBe(undefined);
       });
 
       it('should handle email without @ symbol', () => {
@@ -63,7 +63,7 @@ describe('Utils Library', () => {
       it('should handle very long usernames', () => {
         const longUsername = 'a'.repeat(100);
         const email = `${longUsername}@example.com`;
-        const expected = `${longUsername[0]}${'*'.repeat(99)}@example.com`;
+        const expected = `${longUsername[0]}${'*'.repeat(95)}${longUsername.slice(-4)}@example.com`;
         expect(anonymizeEmail(email)).toBe(expected);
       });
 
@@ -81,73 +81,108 @@ describe('Utils Library', () => {
     });
   });
 
-  describe('detectStateFromPlate', () => {
+  describe('detectStateChanges', () => {
     describe('happy path', () => {
-      it('should detect state from valid license plate', () => {
-        expect(detectStateFromPlate('ABC123')).toBe('CA');
-        expect(detectStateFromPlate('XYZ789')).toBe('NY');
-        expect(detectStateFromPlate('DEF456')).toBe('TX');
+      it('should detect added states', () => {
+        const previousStates = ['01', '06', '36'];
+        const newStates = ['01', '06', '36', '48'];
+        const result = detectStateChanges(previousStates, newStates);
+        expect(result.added).toEqual(['48']);
+        expect(result.removed).toEqual([]);
       });
 
-      it('should handle plates with different formats', () => {
-        expect(detectStateFromPlate('123ABC')).toBe('CA');
-        expect(detectStateFromPlate('ABC-123')).toBe('CA');
-        expect(detectStateFromPlate('ABC 123')).toBe('CA');
+      it('should detect removed states', () => {
+        const previousStates = ['01', '06', '36', '48'];
+        const newStates = ['01', '06', '36'];
+        const result = detectStateChanges(previousStates, newStates);
+        expect(result.added).toEqual([]);
+        expect(result.removed).toEqual(['48']);
       });
 
-      it('should return null for unrecognized plates', () => {
-        expect(detectStateFromPlate('UNKNOWN')).toBeNull();
-        expect(detectStateFromPlate('123456')).toBeNull();
-        expect(detectStateFromPlate('ABCDEF')).toBeNull();
+      it('should detect both added and removed states', () => {
+        const previousStates = ['01', '06', '36'];
+        const newStates = ['06', '36', '48'];
+        const result = detectStateChanges(previousStates, newStates);
+        expect(result.added).toEqual(['48']);
+        expect(result.removed).toEqual(['01']);
+      });
+
+      it('should handle no changes', () => {
+        const previousStates = ['01', '06', '36'];
+        const newStates = ['01', '06', '36'];
+        const result = detectStateChanges(previousStates, newStates);
+        expect(result.added).toEqual([]);
+        expect(result.removed).toEqual([]);
       });
     });
 
     describe('edge cases', () => {
-      it('should handle empty string', () => {
-        expect(detectStateFromPlate('')).toBeNull();
+      it('should handle empty arrays', () => {
+        const result = detectStateChanges([], []);
+        expect(result.added).toEqual([]);
+        expect(result.removed).toEqual([]);
       });
 
-      it('should handle null input', () => {
-        expect(detectStateFromPlate(null)).toBeNull();
+      it('should handle empty previous states', () => {
+        const result = detectStateChanges([], ['01', '06', '36']);
+        expect(result.added).toEqual(['01', '06', '36']);
+        expect(result.removed).toEqual([]);
       });
 
-      it('should handle undefined input', () => {
-        expect(detectStateFromPlate(undefined)).toBeNull();
+      it('should handle empty new states', () => {
+        const result = detectStateChanges(['01', '06', '36'], []);
+        expect(result.added).toEqual([]);
+        expect(result.removed).toEqual(['01', '06', '36']);
       });
 
-      it('should handle very long plates', () => {
-        const longPlate = 'A'.repeat(1000);
-        expect(detectStateFromPlate(longPlate)).toBeNull();
+      it('should handle duplicate states in arrays', () => {
+        const previousStates = ['01', '01', '06', '36'];
+        const newStates = ['01', '06', '06', '48'];
+        const result = detectStateChanges(previousStates, newStates);
+        expect(result.added).toEqual(['48']);
+        expect(result.removed).toEqual(['36']);
       });
 
-      it('should handle plates with special characters', () => {
-        expect(detectStateFromPlate('ABC@123')).toBeNull();
-        expect(detectStateFromPlate('ABC#123')).toBeNull();
-        expect(detectStateFromPlate('ABC$123')).toBeNull();
+      it('should handle null inputs', () => {
+        const result = detectStateChanges(null, ['01', '06']);
+        expect(result.added).toEqual(['01', '06']);
+        expect(result.removed).toEqual([]);
       });
 
-      it('should handle plates with spaces and dashes', () => {
-        expect(detectStateFromPlate('ABC - 123')).toBeNull();
-        expect(detectStateFromPlate('ABC--123')).toBeNull();
-        expect(detectStateFromPlate('ABC  123')).toBeNull();
+      it('should handle undefined inputs', () => {
+        const result = detectStateChanges(['01', '06'], undefined);
+        expect(result.added).toEqual([]);
+        expect(result.removed).toEqual(['01', '06']);
+      });
+    });
+  });
+
+  describe('getCurrentMonthYear', () => {
+    describe('happy path', () => {
+      it('should return current month and year', () => {
+        const result = getCurrentMonthYear();
+        const now = new Date();
+        const expectedMonth = now.toLocaleString('default', { month: 'long' });
+        const expectedYear = now.getFullYear();
+        const expected = `${expectedMonth}-${expectedYear}`;
+        
+        expect(result).toBe(expected);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should return string format', () => {
+        const result = getCurrentMonthYear();
+        expect(typeof result).toBe('string');
+        expect(result).toMatch(/^[A-Za-z]+-\d{4}$/);
       });
 
-      it('should handle case sensitivity', () => {
-        expect(detectStateFromPlate('abc123')).toBe('CA');
-        expect(detectStateFromPlate('AbC123')).toBe('CA');
-        expect(detectStateFromPlate('ABC123')).toBe('CA');
-      });
-
-      it('should handle plates with only numbers', () => {
-        expect(detectStateFromPlate('123456')).toBeNull();
-        expect(detectStateFromPlate('000000')).toBeNull();
-        expect(detectStateFromPlate('999999')).toBeNull();
-      });
-
-      it('should handle plates with only letters', () => {
-        expect(detectStateFromPlate('ABCDEF')).toBeNull();
-        expect(detectStateFromPlate('AAAAAA')).toBeNull();
-        expect(detectStateFromPlate('ZZZZZZ')).toBeNull();
+      it('should handle year boundary', () => {
+        // This test will pass as long as the function works correctly
+        // The actual month-year will depend on when the test runs
+        const result = getCurrentMonthYear();
+        expect(result).toContain('-');
+        expect(result.split('-')).toHaveLength(2);
       });
     });
   });

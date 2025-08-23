@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { validateSession, isAdmin, getUserFromSession } from '../../src/lib/auth.js';
+import { getEmailFromSessionToken, isAdmin, validateSession } from '../../src/lib/auth.js';
 
 // Mock the UserSession class
 vi.mock('../../src/userSession.js', () => ({
@@ -13,164 +13,171 @@ vi.mock('../../src/userSession.js', () => ({
 describe('Auth Library', () => {
   let mockEnv;
   let mockUserSession;
+  let mockUser;
 
   beforeEach(() => {
-    mockEnv = {
-      USER_SESSIONS: 'mock-user-sessions-namespace'
+    // Mock Durable Object namespaces
+    mockUserSession = {
+      fetch: vi.fn()
     };
     
-    mockUserSession = {
-      get: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn()
+    mockUser = {
+      fetch: vi.fn()
+    };
+
+    mockEnv = {
+      USER_SESSIONS: {
+        idFromName: vi.fn().mockReturnValue('mock-user-session-id'),
+        get: vi.fn().mockReturnValue(mockUserSession)
+      },
+      USER: {
+        idFromName: vi.fn().mockReturnValue('mock-user-id'),
+        get: vi.fn().mockReturnValue(mockUser)
+      }
     };
   });
 
-  describe('validateSession', () => {
+  describe('getEmailFromSessionToken', () => {
     describe('happy path', () => {
-      it('should return true for valid session', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'user123',
-          email: 'test@example.com',
-          expiresAt: Date.now() + 3600000 // 1 hour from now
+      it('should return email for valid session token', async () => {
+        mockUserSession.fetch.mockResolvedValue({
+          json: vi.fn().mockResolvedValue({
+            email: 'test@example.com'
+          })
         });
 
-        const result = await validateSession(mockEnv, 'valid-session-id');
-        expect(result).toBe(true);
-      });
-
-      it('should return false for expired session', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'user123',
-          email: 'test@example.com',
-          expiresAt: Date.now() - 3600000 // 1 hour ago
-        });
-
-        const result = await validateSession(mockEnv, 'expired-session-id');
-        expect(result).toBe(false);
-      });
-
-      it('should return false for non-existent session', async () => {
-        mockUserSession.get.mockResolvedValue(null);
-
-        const result = await validateSession(mockEnv, 'non-existent-session-id');
-        expect(result).toBe(false);
+        const result = await getEmailFromSessionToken('valid-session-id', mockEnv);
+        expect(result).toBe('test@example.com');
+        expect(mockEnv.USER_SESSIONS.idFromName).toHaveBeenCalledWith('valid-session-id');
+        expect(mockEnv.USER_SESSIONS.get).toHaveBeenCalledWith('mock-user-session-id');
       });
     });
 
     describe('edge cases', () => {
-      it('should handle missing session data gracefully', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'user123'
-          // Missing email and expiresAt
+      it('should handle missing email in session data', async () => {
+        mockUserSession.fetch.mockResolvedValue({
+          json: vi.fn().mockResolvedValue({
+            // Missing email
+          })
         });
 
-        const result = await validateSession(mockEnv, 'incomplete-session-id');
-        expect(result).toBe(false);
+        const result = await getEmailFromSessionToken('invalid-session-id', mockEnv);
+        expect(result).toBeUndefined();
       });
 
-      it('should handle malformed session data', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: null,
-          email: '',
-          expiresAt: 'invalid-date'
+      it('should handle null session data', async () => {
+        mockUserSession.fetch.mockResolvedValue({
+          json: vi.fn().mockResolvedValue(null)
         });
 
-        const result = await validateSession(mockEnv, 'malformed-session-id');
-        expect(result).toBe(false);
-      });
-
-      it('should handle session with exactly expired timestamp', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'user123',
-          email: 'test@example.com',
-          expiresAt: Date.now() // exactly now
-        });
-
-        const result = await validateSession(mockEnv, 'expired-now-session-id');
-        expect(result).toBe(false);
+        const result = await getEmailFromSessionToken('null-session-id', mockEnv);
+        expect(result).toBeUndefined();
       });
     });
   });
 
   describe('isAdmin', () => {
     describe('happy path', () => {
-      it('should return true for admin user', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'admin123',
-          email: 'admin@example.com',
-          isAdmin: true
-        });
-
-        const result = await isAdmin(mockEnv, 'admin-session-id');
+      it('should return true for admin email', () => {
+        const result = isAdmin('joseph.e.combs@gmail.com');
         expect(result).toBe(true);
       });
 
-      it('should return false for non-admin user', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'user123',
-          email: 'user@example.com',
-          isAdmin: false
-        });
-
-        const result = await isAdmin(mockEnv, 'user-session-id');
+      it('should return false for non-admin email', () => {
+        const result = isAdmin('user@example.com');
         expect(result).toBe(false);
       });
     });
 
     describe('edge cases', () => {
-      it('should return false for session without admin flag', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'user123',
-          email: 'user@example.com'
-          // Missing isAdmin flag
-        });
-
-        const result = await isAdmin(mockEnv, 'no-admin-flag-session-id');
+      it('should return false for empty email', () => {
+        const result = isAdmin('');
         expect(result).toBe(false);
       });
 
-      it('should return false for null session', async () => {
-        mockUserSession.get.mockResolvedValue(null);
+      it('should return false for null email', () => {
+        const result = isAdmin(null);
+        expect(result).toBe(false);
+      });
 
-        const result = await isAdmin(mockEnv, 'null-session-id');
+      it('should return false for undefined email', () => {
+        const result = isAdmin(undefined);
+        expect(result).toBe(false);
+      });
+
+      it('should be case sensitive', () => {
+        const result = isAdmin('JOSEPH.E.COMBS@GMAIL.COM');
         expect(result).toBe(false);
       });
     });
   });
 
-  describe('getUserFromSession', () => {
+  describe('validateSession', () => {
     describe('happy path', () => {
-      it('should return user data for valid session', async () => {
-        const userData = {
-          userId: 'user123',
-          email: 'test@example.com',
-          name: 'Test User'
-        };
-        mockUserSession.get.mockResolvedValue(userData);
+      it('should return valid user data for valid session', async () => {
+        mockUserSession.fetch.mockResolvedValue({
+          json: vi.fn().mockResolvedValue({
+            email: 'test@example.com'
+          })
+        });
 
-        const result = await getUserFromSession(mockEnv, 'valid-session-id');
-        expect(result).toEqual(userData);
+        mockUser.fetch.mockResolvedValue({
+          json: vi.fn().mockResolvedValue({
+            userId: 'user123',
+            name: 'Test User'
+          })
+        });
+
+        const result = await validateSession('valid-session-id', mockEnv);
+        expect(result).toEqual({
+          valid: true,
+          user: { userId: 'user123', name: 'Test User' },
+          email: 'test@example.com'
+        });
       });
     });
 
     describe('edge cases', () => {
-      it('should return null for non-existent session', async () => {
-        mockUserSession.get.mockResolvedValue(null);
-
-        const result = await getUserFromSession(mockEnv, 'non-existent-session-id');
-        expect(result).toBeNull();
+      it('should return error for missing session token', async () => {
+        const result = await validateSession(null, mockEnv);
+        expect(result).toEqual({
+          valid: false,
+          error: 'No session token provided'
+        });
       });
 
-      it('should return null for expired session', async () => {
-        mockUserSession.get.mockResolvedValue({
-          userId: 'user123',
-          email: 'test@example.com',
-          expiresAt: Date.now() - 3600000
+      it('should return error for empty session token', async () => {
+        const result = await validateSession('', mockEnv);
+        expect(result).toEqual({
+          valid: false,
+          error: 'No session token provided'
+        });
+      });
+
+      it('should return error for invalid session token', async () => {
+        mockUserSession.fetch.mockResolvedValue({
+          json: vi.fn().mockResolvedValue(null)
         });
 
-        const result = await getUserFromSession(mockEnv, 'expired-session-id');
-        expect(result).toBeNull();
+        const result = await validateSession('invalid-session-id', mockEnv);
+        expect(result).toEqual({
+          valid: false,
+          error: 'Invalid session token'
+        });
+      });
+
+      it('should return error for session without email', async () => {
+        mockUserSession.fetch.mockResolvedValue({
+          json: vi.fn().mockResolvedValue({
+            // Missing email
+          })
+        });
+
+        const result = await validateSession('no-email-session-id', mockEnv);
+        expect(result).toEqual({
+          valid: false,
+          error: 'Invalid session token'
+        });
       });
     });
   });
