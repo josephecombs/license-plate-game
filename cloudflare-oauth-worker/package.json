@@ -6,7 +6,17 @@
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
-		"test": "vitest"
+		"test": "vitest",
+		"test:run": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"test:ui": "vitest --ui",
+		"test:all": "node test/run-tests.js",
+		"test:constants": "vitest run test/constants/",
+		"test:lib": "vitest run test/lib/",
+		"test:routes": "vitest run test/routes/",
+		"test:durable-objects": "vitest run test/durable-objects/",
+		"test:router": "vitest run test/index.test.js"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.7.5",

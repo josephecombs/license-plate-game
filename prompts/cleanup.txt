@@ -58,3 +58,7 @@ This structure follows REST principles much better and makes the codebase mainta
 Would you like me to proceed with implementing this restructuring, or would you prefer to review this proposal first?
   
   implement the suggestions above please.
+
+  c.) great job. Now, please implement tests of these new files, controllers, constants, etc. I prefer that the tests be kept in a directory /test at the root of the project. Tell me how to run the test suite from the root of the project after this is done. Generally, my testing philosophy is:
+
+  happy path, edge cases. thanks
