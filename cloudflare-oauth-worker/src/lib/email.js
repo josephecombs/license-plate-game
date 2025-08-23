@@ -6,9 +6,15 @@ import { STATE_NAMES } from '../constants/states.js';
  */
 export async function sendEmailNotification(env, to, from, subject, body) {
 	// Validate required parameters
+	// console.log('Arguments:', { to, from, subject, body });
 	if (!to || !from || !subject || !body) {
-		throw new Error(`Missing required email parameters: to=${to}, from=${from}, subject=${subject}, body=${body}`);
+		console.log('actually hitting this');
+		const errMessage = `Missing required email parameters: to=${to}, from=${from}, subject=${subject}, body=${body}`;
+		console.log({errMessage})
+		throw new Error(errMessage);
 	}
+
+	// throw 'qwer';
 
 	// Validate AWS credentials
 	const accessKey = env.AWS_ACCESS_KEY_ID;
@@ -63,6 +69,16 @@ export async function sendEmailNotification(env, to, from, subject, body) {
  * Send state change email notifications
  */
 export async function sendStateChangeEmail(env, userEmail, userName, action, stateId, previousStates, newStates) {
+	// Validate required parameters
+	if (!userEmail || !userName || !action || !stateId) {
+		throw new Error('Missing required parameters');
+	}
+
+	// Validate that previousStates and newStates are arrays
+	if (!Array.isArray(previousStates) || !Array.isArray(newStates)) {
+		throw new Error('Invalid parameters');
+	}
+
 	const stateName = STATE_NAMES[stateId] || stateId;
 	const timestamp = new Date().toLocaleString();
 	const previousCount = previousStates.length;
