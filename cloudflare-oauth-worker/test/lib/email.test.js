@@ -59,37 +59,43 @@ describe('Email Library', () => {
         expect(result).toBe(true);
       });
 
-      it('should handle SES client errors gracefully', async () => {
+      it('should throw error when SES client fails', async () => {
         __setSesFailure(new Error('SES service error'));
 
-        const result = await sendEmailNotification(
+        await expect(sendEmailNotification(
           mockEnv,
           'user@example.com',
           'noreply@example.com',
           'Test Subject',
           'Test body'
-        );
-
-        expect(result).toBe(false);
+        )).rejects.toThrow('SES service error');
       });
     });
 
     describe('edge cases', () => {
-      it('should handle missing AWS credentials gracefully', async () => {
+      it('should throw error when AWS credentials are missing', async () => {
         const incompleteEnv = {
           AWS_REGION: 'us-east-1'
           // Missing AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
         };
 
-        const result = await sendEmailNotification(
+        await expect(sendEmailNotification(
           incompleteEnv,
           'user@example.com',
           'noreply@example.com',
           'Test Subject',
           'Test body'
-        );
+        )).rejects.toThrow('AWS credentials not configured');
+      });
 
-        expect(result).toBe(false);
+      it('should throw error when required parameters are missing', async () => {
+        await expect(sendEmailNotification(
+          mockEnv,
+          '', // missing to
+          'noreply@example.com',
+          'Test Subject',
+          'Test body'
+        )).rejects.toThrow('Missing required email parameters');
       });
     });
   });

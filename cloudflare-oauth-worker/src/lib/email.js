@@ -5,59 +5,58 @@ import { STATE_NAMES } from '../constants/states.js';
  * Send email notification using AWS SES
  */
 export async function sendEmailNotification(env, to, from, subject, body) {
-	try {
-		const accessKey = env.AWS_ACCESS_KEY_ID;
-		const secretKey = env.AWS_SECRET_ACCESS_KEY;
-		const region = 'us-east-1'; // Change this to your SES region
-		
-		if (!accessKey || !secretKey) {
-			console.error('❌ AWS credentials not found');
-			return false;
-		}
-		
-		// Create SES client
-		const sesClient = new SESClient({
-			region: region,
-			credentials: {
-				accessKeyId: accessKey,
-				secretAccessKey: secretKey,
-			},
-		});
-		
-		// Create the email command
-		const command = new SendEmailCommand({
-			Source: from,
-			Destination: {
-				ToAddresses: [to],
-			},
-			Message: {
-				Subject: {
-					Data: subject,
-				},
-				Body: {
-					Text: {
-						Data: body,
-					},
-				},
-			},
-		});
-		
-		console.log('📧 Sending email via AWS SES...');
-		console.log('📧 To:', to);
-		console.log('📧 From:', from);
-		console.log('📧 Subject:', subject);
-		
-		// Send the email
-		const response = await sesClient.send(command);
-		
-		console.log('✅ Email sent successfully via AWS SES');
-		console.log('📧 Message ID:', response.MessageId);
-		return true;
-		
-	} catch (error) {
-		console.error('❌ Error sending email via AWS SES:', error);
-		return false;
+	// Validate required parameters
+	if (!to || !from || !subject || !body) {
+		throw new Error(`Missing required email parameters: to=${to}, from=${from}, subject=${subject}, body=${body}`);
 	}
+
+	// Validate AWS credentials
+	const accessKey = env.AWS_ACCESS_KEY_ID;
+	const secretKey = env.AWS_SECRET_ACCESS_KEY;
+	const region = 'us-east-1'; // Change this to your SES region
+	
+	if (!accessKey || !secretKey) {
+		throw new Error('AWS credentials not configured: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required');
+	}
+	
+	// Create SES client
+	const sesClient = new SESClient({
+		region: region,
+		credentials: {
+			accessKeyId: accessKey,
+			secretAccessKey: secretKey,
+		},
+	});
+	
+	// Create the email command
+	const command = new SendEmailCommand({
+		Source: from,
+		Destination: {
+			ToAddresses: [to],
+		},
+		Message: {
+			Subject: {
+				Data: subject,
+			},
+			Body: {
+				Text: {
+					Data: body,
+				},
+			},
+		},
+	});
+	
+	console.log('📧 Sending email via AWS SES...');
+	console.log('📧 To:', to);
+	console.log('📧 From:', from);
+	console.log('📧 Subject:', subject);
+	
+	// Send the email - let AWS SES errors bubble up naturally
+	const response = await sesClient.send(command);
+	
+	console.log('✅ Email sent successfully via AWS SES');
+	console.log('📧 Message ID:', response.MessageId);
+	return true;
 }
 
 /**
@@ -74,7 +73,7 @@ export async function sendStateChangeEmail(env, userEmail, userName, action, sta
 	const body = `
 Hello from Plate Chase!
 
-${userName} (${userEmail}) has ${action.toLowerCase()} ${stateName} from their license plate collection.
+${userName}
 
 Details:
 - Action: ${action}
@@ -101,12 +100,7 @@ The Plate Chase Team
 	console.log(`🔑 AWS Secret Access Key: ${env.AWS_SECRET_ACCESS_KEY ? env.AWS_SECRET_ACCESS_KEY.substring(0, 8) + '...' : 'NOT SET'}`);
 	console.log(`📧 Notification Email: ${env.NOTIFICATION_EMAIL || 'NOT SET'}`);
 
-	// Use the new sendEmailNotification function
-	const success = await sendEmailNotification(env, env.NOTIFICATION_EMAIL, 'support@platechase.com', subject, body);
-
-	if (success) {
-		console.log(`✅ Email notification sent for ${action} of ${stateName} by ${userEmail}`);
-	} else {
-		console.error(`❌ Failed to send email notification for ${action} of ${stateName} by ${userEmail}`);
-	}
+	// Send email notification - let errors bubble up to caller
+	await sendEmailNotification(env, env.NOTIFICATION_EMAIL, 'support@platechase.com', subject, body);
+	console.log(`✅ Email notification sent for ${action} of ${stateName} by ${userEmail}`);
 }
