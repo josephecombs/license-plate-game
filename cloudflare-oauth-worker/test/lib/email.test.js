@@ -1,19 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { sendEmailNotification, sendStateChangeEmail } from '../../src/lib/email.js';
 
-// Mock AWS SES client
+// Mock AWS SES client once at the top
 vi.mock('@aws-sdk/client-ses', () => ({
-  SESClient: vi.fn().mockImplementation(() => ({
-    send: vi.fn()
-  })),
+  SESClient: vi.fn(),
   SendEmailCommand: vi.fn().mockImplementation((params) => params)
 }));
 
 describe('Email Library', () => {
   let mockEnv;
-  let mockSESClient;
+  let SESClient;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Get the mocked SESClient once
+    const sesModule = await import('@aws-sdk/client-ses');
+    SESClient = sesModule.SESClient;
+    
     mockEnv = {
       AWS_ACCESS_KEY_ID: 'test-access-key',
       AWS_SECRET_ACCESS_KEY: 'test-secret-key',
@@ -21,27 +22,29 @@ describe('Email Library', () => {
       NOTIFICATION_EMAIL: 'admin@example.com'
     };
 
-    mockSESClient = {
-      send: vi.fn()
-    };
-
     // Reset mocks
     vi.clearAllMocks();
   });
 
+  // Helper functions to control AWS SES behavior
+  const mockSESSuccess = () => {
+    SESClient.mockImplementation(() => ({
+      send: vi.fn().mockResolvedValue({ MessageId: 'test-message-id' })
+    }));
+  };
+
+  const mockSESFailure = () => {
+    SESClient.mockImplementation(() => ({
+      send: vi.fn().mockRejectedValue(new Error('SES service error'))
+    }));
+  };
+
   describe('sendEmailNotification', () => {
     describe('happy path', () => {
       it('should send email successfully with valid parameters', async () => {
-        const mockSendResponse = {
-          MessageId: 'test-message-id-123'
-        };
+        mockSESSuccess();
 
-        // Mock the SESClient constructor to return our mock
-        const { SESClient } = await import('@aws-sdk/client-ses');
-        SESClient.mockImplementation(() => ({
-          send: vi.fn().mockResolvedValue(mockSendResponse)
-        }));
-
+        const { sendEmailNotification } = await import('../../src/lib/email.js');
         const result = await sendEmailNotification(
           mockEnv,
           'user@example.com',
@@ -54,12 +57,9 @@ describe('Email Library', () => {
       });
 
       it('should handle SES client errors gracefully', async () => {
-        // Mock the SESClient constructor to return our mock
-        const { SESClient } = await import('@aws-sdk/client-ses');
-        SESClient.mockImplementation(() => ({
-          send: vi.fn().mockRejectedValue(new Error('SES service error'))
-        }));
+        mockSESFailure();
 
+        const { sendEmailNotification } = await import('../../src/lib/email.js');
         const result = await sendEmailNotification(
           mockEnv,
           'user@example.com',
@@ -79,6 +79,9 @@ describe('Email Library', () => {
           // Missing AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
         };
 
+        mockSESFailure();
+
+        const { sendEmailNotification } = await import('../../src/lib/email.js');
         const result = await sendEmailNotification(
           incompleteEnv,
           'user@example.com',
@@ -91,6 +94,9 @@ describe('Email Library', () => {
       });
 
       it('should handle empty email parameters', async () => {
+        mockSESFailure();
+
+        const { sendEmailNotification } = await import('../../src/lib/email.js');
         const result = await sendEmailNotification(
           mockEnv,
           '',
@@ -105,13 +111,18 @@ describe('Email Library', () => {
   });
 
   describe('sendStateChangeEmail', () => {
+    let emailModule;
+    
+    beforeEach(async () => {
+      // Reset the mock for each test
+      vi.clearAllMocks();
+    });
+
     describe('happy path', () => {
       it('should send state change email successfully', async () => {
-        // Mock the sendEmailNotification function
-        const { sendEmailNotification } = await import('../../src/lib/email.js');
-        vi.spyOn(await import('../../src/lib/email.js'), 'sendEmailNotification')
-          .mockResolvedValue(true);
+        mockSESSuccess();
 
+        const { sendStateChangeEmail } = await import('../../src/lib/email.js');
         const result = await sendStateChangeEmail(
           mockEnv,
           'user@example.com',
@@ -126,9 +137,12 @@ describe('Email Library', () => {
       });
 
       it('should handle different state actions', async () => {
+        mockSESSuccess();
+
         const actions = ['ADDED', 'REMOVED', 'UPDATED'];
         
         for (const action of actions) {
+          const { sendStateChangeEmail } = await import('../../src/lib/email.js');
           const result = await sendStateChangeEmail(
             mockEnv,
             'user@example.com',
@@ -144,9 +158,12 @@ describe('Email Library', () => {
       });
 
       it('should handle different state IDs', async () => {
+        mockSESSuccess();
+
         const stateIds = ['01', '06', '36', '48']; // AL, CA, NY, TX
         
         for (const stateId of stateIds) {
+          const { sendStateChangeEmail } = await import('../../src/lib/email.js');
           const result = await sendStateChangeEmail(
             mockEnv,
             'user@example.com',
@@ -164,6 +181,9 @@ describe('Email Library', () => {
 
     describe('edge cases', () => {
       it('should handle unknown state ID', async () => {
+        mockSESSuccess();
+
+        const { sendStateChangeEmail } = await import('../../src/lib/email.js');
         const result = await sendStateChangeEmail(
           mockEnv,
           'user@example.com',
@@ -178,6 +198,9 @@ describe('Email Library', () => {
       });
 
       it('should handle empty user name', async () => {
+        mockSESSuccess();
+
+        const { sendStateChangeEmail } = await import('../../src/lib/email.js');
         const result = await sendStateChangeEmail(
           mockEnv,
           'user@example.com',
@@ -198,6 +221,9 @@ describe('Email Library', () => {
           // Missing NOTIFICATION_EMAIL
         };
 
+        mockSESFailure();
+
+        const { sendStateChangeEmail } = await import('../../src/lib/email.js');
         const result = await sendStateChangeEmail(
           incompleteEnv,
           'user@example.com',
@@ -212,6 +238,9 @@ describe('Email Library', () => {
       });
 
       it('should handle empty previous and new states arrays', async () => {
+        mockSESSuccess();
+
+        const { sendStateChangeEmail } = await import('../../src/lib/email.js');
         const result = await sendStateChangeEmail(
           mockEnv,
           'user@example.com',
@@ -226,9 +255,12 @@ describe('Email Library', () => {
       });
 
       it('should handle large state arrays', async () => {
+        mockSESSuccess();
+
         const largePreviousStates = Array.from({ length: 50 }, (_, i) => String(i + 1).padStart(2, '0'));
         const largeNewStates = Array.from({ length: 51 }, (_, i) => String(i + 1).padStart(2, '0'));
 
+        const { sendStateChangeEmail } = await import('../../src/lib/email.js');
         const result = await sendStateChangeEmail(
           mockEnv,
           'user@example.com',

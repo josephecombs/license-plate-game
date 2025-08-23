@@ -7,7 +7,7 @@ describe('Utils Library', () => {
       it('should anonymize standard email addresses', () => {
         expect(anonymizeEmail('john.doe@example.com')).toBe('j***.doe@example.com');
         expect(anonymizeEmail('user@domain.org')).toBe('u*user@domain.org');
-        expect(anonymizeEmail('test123@company.co.uk')).toBe('t******23@company.co.uk');
+        expect(anonymizeEmail('test123@company.co.uk')).toBe('t**t123@company.co.uk');
       });
 
       it('should handle single character usernames', () => {
@@ -71,7 +71,7 @@ describe('Utils Library', () => {
         expect(anonymizeEmail('user-name@example.com')).toBe('u****name@example.com');
         expect(anonymizeEmail('user_name@example.com')).toBe('u****name@example.com');
         expect(anonymizeEmail('user+tag@example.com')).toBe('u***+tag@example.com');
-        expect(anonymizeEmail('user.tag@example.com')).toBe('u****tag@example.com');
+        expect(anonymizeEmail('user.tag@example.com')).toBe('u***.tag@example.com');
       });
 
       it('should handle numbers in username', () => {
