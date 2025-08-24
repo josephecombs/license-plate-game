@@ -25,7 +25,7 @@ export async function getEmailFromSessionToken(sessionToken, env) {
 /**
  * Check if a user is an admin
  */
-export function isAdmin(email) {
+export async function isAdmin(email) {
 	return email === 'joseph.e.combs@gmail.com';
 }
 

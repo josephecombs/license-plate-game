@@ -41,7 +41,7 @@ describe('Reports Routes', () => {
     describe('happy path', () => {
       it('should return game reports successfully', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockGames = [
@@ -81,7 +81,7 @@ describe('Reports Routes', () => {
 
       it('should return empty reports when no games exist', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         mockGame.list.mockResolvedValue([]);
@@ -102,7 +102,7 @@ describe('Reports Routes', () => {
 
       it('should handle reports with pagination parameters', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockGames = Array.from({ length: 50 }, (_, i) => ({
@@ -134,7 +134,7 @@ describe('Reports Routes', () => {
     describe('edge cases', () => {
       it('should require admin privileges', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'user@example.com' }, email: 'user@example.com' });
         isAdmin.mockResolvedValue(false);
 
         const mockRequest = new Request('https://example.com/reports', {
@@ -163,7 +163,7 @@ describe('Reports Routes', () => {
 
       it('should handle invalid session', async () => {
         const { validateSession } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(false);
+        validateSession.mockResolvedValue({ valid: false, error: 'Invalid session token' });
 
         const mockRequest = new Request('https://example.com/reports', {
           headers: {
@@ -180,7 +180,7 @@ describe('Reports Routes', () => {
 
       it('should handle invalid pagination parameters', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/reports?limit=invalid&offset=-5', {
@@ -198,7 +198,7 @@ describe('Reports Routes', () => {
 
       it('should handle very large pagination limits', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/reports?limit=10000&offset=0', {
@@ -216,7 +216,7 @@ describe('Reports Routes', () => {
 
       it('should handle negative offset values', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/reports?limit=10&offset=-10', {
@@ -234,7 +234,7 @@ describe('Reports Routes', () => {
 
       it('should handle game list retrieval errors', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         mockGame.list.mockRejectedValue(new Error('Database error'));
@@ -254,7 +254,7 @@ describe('Reports Routes', () => {
 
       it('should handle malformed query parameters', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/reports?limit=&offset=abc', {
@@ -272,7 +272,7 @@ describe('Reports Routes', () => {
 
       it('should handle missing query parameters gracefully', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockGames = [
@@ -304,7 +304,7 @@ describe('Reports Routes', () => {
 
       it('should handle special characters in query parameters', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/reports?limit=10&offset=0&filter=test%20with%20spaces', {
