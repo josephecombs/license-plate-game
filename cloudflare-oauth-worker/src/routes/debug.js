@@ -1,4 +1,5 @@
 import { getCurrentMonthYear } from '../lib/utils.js';
+import { validateSession, isAdmin } from '../lib/auth.js';
 
 /**
  * Debug and testing routes
@@ -7,14 +8,53 @@ import { getCurrentMonthYear } from '../lib/utils.js';
 /**
  * Handle GET /debug-env - inspect environment variables
  */
-export function handleDebugEnv(env) {
-	const envDebug = {
-		allKeys: Object.keys(env),
-		awsAccessKey: env.AWS_ACCESS_KEY_ID ? env.AWS_ACCESS_KEY_ID.substring(0, 8) + '...' : 'NOT SET',
-		awsSecretKey: env.AWS_SECRET_ACCESS_KEY ? env.AWS_SECRET_ACCESS_KEY.substring(0, 8) + '...' : 'NOT SET',
-		notificationEmail: env.NOTIFICATION_EMAIL || 'NOT SET'
-	};
-	return new Response(JSON.stringify(envDebug, null, 2), { 
+export async function handleDebugEnv(request, env, context) {
+	// Extract session token from cookie
+	const cookieHeader = request.headers.get('Cookie');
+	const sessionToken = cookieHeader ? 
+		cookieHeader.split(';')
+			.find(c => c.trim().startsWith('session='))
+			?.split('=')[1] : null;
+
+	// Validate session
+	if (!sessionToken) {
+		return new Response(JSON.stringify({ error: 'Unauthorized - No session cookie' }), { 
+			status: 401, 
+			headers: { 'Content-Type': 'application/json' } 
+		});
+	}
+
+	const sessionValidation = await validateSession(sessionToken, env);
+	if (!sessionValidation.valid) {
+		return new Response(JSON.stringify({ error: 'Unauthorized - Invalid session' }), { 
+			status: 401, 
+			headers: { 'Content-Type': 'application/json' } 
+		});
+	}
+
+	// Check admin privileges
+	const adminStatus = await isAdmin(sessionValidation.email);
+	if (!adminStatus) {
+		return new Response(JSON.stringify({ error: 'Admin access required' }), { 
+			status: 403, 
+			headers: { 'Content-Type': 'application/json' } 
+		});
+	}
+
+	// Build environment debug info
+	const environment = {};
+	
+	// Add all environment variables
+	Object.keys(env).forEach(key => {
+		if (key === 'CLIENT_SECRET' || key === 'AWS_SECRET_ACCESS_KEY' || key === 'AWS_ACCESS_KEY_ID') {
+			environment[key] = '***'; // Mask sensitive values
+		} else {
+			environment[key] = env[key];
+		}
+	});
+
+	return new Response(JSON.stringify({ environment }, null, 2), { 
+		status: 200,
 		headers: { 'Content-Type': 'application/json' } 
 	});
 }
@@ -22,9 +62,52 @@ export function handleDebugEnv(env) {
 /**
  * Handle GET/POST /debug-game - test game data storage
  */
-export async function handleDebugGame(request, env) {
+export async function handleDebugGame(request, env, context) {
+	// Extract session token from cookie
+	const cookieHeader = request.headers.get('Cookie');
+	const sessionToken = cookieHeader ? 
+		cookieHeader.split(';')
+			.find(c => c.trim().startsWith('session='))
+			?.split('=')[1] : null;
+
+	// Validate session
+	if (!sessionToken) {
+		return new Response(JSON.stringify({ error: 'Unauthorized - No session cookie' }), { 
+			status: 401, 
+			headers: { 'Content-Type': 'application/json' } 
+		});
+	}
+
+	const sessionValidation = await validateSession(sessionToken, env);
+	if (!sessionValidation.valid) {
+		return new Response(JSON.stringify({ error: 'Unauthorized - Invalid session' }), { 
+			status: 401, 
+			headers: { 'Content-Type': 'application/json' } 
+		});
+	}
+
+	// Check admin privileges
+	const adminStatus = await isAdmin(sessionValidation.email);
+	if (!adminStatus) {
+		return new Response(JSON.stringify({ error: 'Admin access required' }), { 
+			status: 403, 
+			headers: { 'Content-Type': 'application/json' } 
+		});
+	}
+
 	const currentMonthYear = getCurrentMonthYear();
 	console.log('🔍 /debug-game - Month/Year:', currentMonthYear);
+	
+	// Check if GAME object exists in env
+	if (!env.GAME) {
+		return new Response(JSON.stringify({ 
+			error: 'GAME object not available in environment',
+			availableKeys: Object.keys(env)
+		}), { 
+			status: 500, 
+			headers: { 'Content-Type': 'application/json' } 
+		});
+	}
 	
 	const gameObjId = env.GAME.idFromName(currentMonthYear);
 	const gameObj = env.GAME.get(gameObjId);
@@ -56,9 +139,15 @@ export async function handleDebugGame(request, env) {
 		const allUsers = await allUsersResponse.json();
 		
 		return new Response(JSON.stringify({ 
-			message: 'Debug game data',
-			allUsers: allUsers,
-			monthYear: currentMonthYear
+			debug: {
+				gamesNamespace: env.GAMES || 'NOT_SET',
+				userSessionsNamespace: env.USER_SESSIONS || 'NOT_SET',
+				timestamp: new Date().toISOString(),
+				environment: 'development',
+				version: '1.0.0',
+				monthYear: currentMonthYear,
+				allUsers: allUsers
+			}
 		}), { headers: { 'Content-Type': 'application/json' } });
 	}
 }

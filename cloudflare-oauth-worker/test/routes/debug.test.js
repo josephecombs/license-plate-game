@@ -21,7 +21,17 @@ describe('Debug Routes', () => {
       AWS_ACCESS_KEY_ID: 'test-aws-key',
       AWS_SECRET_ACCESS_KEY: 'test-aws-secret',
       AWS_REGION: 'us-east-1',
-      FROM_EMAIL: 'noreply@example.com'
+      FROM_EMAIL: 'noreply@example.com',
+      GAME: {
+        idFromName: vi.fn().mockReturnValue('mock-game-id'),
+        get: vi.fn().mockReturnValue({
+          fetch: vi.fn().mockResolvedValue({
+            json: vi.fn().mockResolvedValue([
+              { email: 'test@example.com', gameState: { visitedStates: ['01', '02'] } }
+            ])
+          })
+        })
+      }
     };
 
     mockContext = {
@@ -35,7 +45,7 @@ describe('Debug Routes', () => {
     describe('happy path', () => {
       it('should return environment variables for admin users', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/debug-env', {
@@ -56,7 +66,7 @@ describe('Debug Routes', () => {
 
       it('should mask sensitive environment variables', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/debug-env', {
@@ -78,7 +88,7 @@ describe('Debug Routes', () => {
     describe('edge cases', () => {
       it('should require admin privileges', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'user@example.com' }, email: 'user@example.com' });
         isAdmin.mockResolvedValue(false);
 
         const mockRequest = new Request('https://example.com/debug-env', {
@@ -124,12 +134,12 @@ describe('Debug Routes', () => {
 
       it('should handle missing environment variables gracefully', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const incompleteEnv = {
-          GAMES: 'mock-games-namespace'
-          // Missing other environment variables
+          // Missing GAMES and USER_SESSIONS
+          CLIENT_ID: 'test-client-id'
         };
 
         const mockRequest = new Request('https://example.com/debug-env', {
@@ -143,13 +153,14 @@ describe('Debug Routes', () => {
         expect(response.status).toBe(200);
         const body = await response.json();
         expect(body.environment).toBeDefined();
-        expect(body.environment.GAMES).toBe('mock-games-namespace');
-        expect(body.environment.CLIENT_ID).toBeUndefined();
+        expect(body.environment.CLIENT_ID).toBe('test-client-id');
+        expect(body.environment.GAMES).toBeUndefined();
+        expect(body.environment.USER_SESSIONS).toBeUndefined();
       });
 
       it('should handle empty environment variables', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const envWithEmptyValues = {
@@ -180,7 +191,7 @@ describe('Debug Routes', () => {
     describe('happy path', () => {
       it('should return game debug information for admin users', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/debug-game', {
@@ -201,7 +212,7 @@ describe('Debug Routes', () => {
 
       it('should include system information', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/debug-game', {
@@ -223,7 +234,7 @@ describe('Debug Routes', () => {
     describe('edge cases', () => {
       it('should require admin privileges', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'user@example.com' }, email: 'user@example.com' });
         isAdmin.mockResolvedValue(false);
 
         const mockRequest = new Request('https://example.com/debug-game', {
@@ -269,12 +280,20 @@ describe('Debug Routes', () => {
 
       it('should handle missing environment variables gracefully', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const incompleteEnv = {
           // Missing GAMES and USER_SESSIONS
-          CLIENT_ID: 'test-client-id'
+          CLIENT_ID: 'test-client-id',
+          GAME: {
+            idFromName: vi.fn().mockReturnValue('mock-game-id'),
+            get: vi.fn().mockReturnValue({
+              fetch: vi.fn().mockResolvedValue({
+                json: vi.fn().mockResolvedValue([])
+              })
+            })
+          }
         };
 
         const mockRequest = new Request('https://example.com/debug-game', {
@@ -287,13 +306,13 @@ describe('Debug Routes', () => {
         
         expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.debug.gamesNamespace).toBeUndefined();
-        expect(body.debug.userSessionsNamespace).toBeUndefined();
+        expect(body.debug.gamesNamespace).toBe('NOT_SET');
+        expect(body.debug.userSessionsNamespace).toBe('NOT_SET');
       });
 
       it('should handle different request methods', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'];
@@ -310,13 +329,21 @@ describe('Debug Routes', () => {
           
           expect(response.status).toBe(200);
           const body = await response.json();
-          expect(body.debug).toBeDefined();
+          
+          if (method === 'POST') {
+            // POST requests return a different format
+            expect(body.message).toBe('Test data saved');
+            expect(body.monthYear).toBeDefined();
+          } else {
+            // GET and other methods return debug format
+            expect(body.debug).toBeDefined();
+          }
         }
       });
 
       it('should handle requests with query parameters', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/debug-game?format=json&verbose=true', {
@@ -335,7 +362,7 @@ describe('Debug Routes', () => {
 
       it('should handle requests with custom headers', async () => {
         const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'admin@example.com' }, email: 'admin@example.com' });
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/debug-game', {
@@ -357,10 +384,10 @@ describe('Debug Routes', () => {
   });
 
   describe('debug route security', () => {
-    it('should not expose sensitive information in non-admin responses', async () => {
-      const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-      validateSession.mockResolvedValue(true);
-      isAdmin.mockResolvedValue(false);
+      it('should not expose sensitive information in non-admin responses', async () => {
+        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
+        validateSession.mockResolvedValue({ valid: true, user: { email: 'user@example.com' }, email: 'user@example.com' });
+        isAdmin.mockResolvedValue(false);
 
       const mockRequest = new Request('https://example.com/debug-env', {
         headers: {

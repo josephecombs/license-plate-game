@@ -78,9 +78,9 @@ export default {
 			} else if (url.pathname === '/reports') {
 				response = await handleReports(request, env);
 			} else if (url.pathname === '/debug-env') {
-				response = handleDebugEnv(env);
+				response = await handleDebugEnv(request, env, ctx);
 			} else if (url.pathname === '/debug-game') {
-				response = await handleDebugGame(request, env);
+				response = await handleDebugGame(request, env, ctx);
 			} else {
 				response = new Response('Hello World!');
 			}
