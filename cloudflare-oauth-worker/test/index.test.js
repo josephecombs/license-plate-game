@@ -20,7 +20,7 @@ vi.mock('../src/routes/users.js', () => ({
 }));
 
 vi.mock('../src/routes/reports.js', () => ({
-  handleReportsGet: vi.fn()
+  handleReports: vi.fn()
 }));
 
 vi.mock('../src/routes/debug.js', () => ({
@@ -156,15 +156,15 @@ describe('Main Router (index.js)', () => {
     });
 
     it('should route reports requests correctly', async () => {
-      const { handleReportsGet } = await import('../src/routes/reports.js');
+      const { handleReports } = await import('../src/routes/reports.js');
       const mockResponse = new Response('Reports retrieved', { status: 200 });
-      handleReportsGet.mockResolvedValue(mockResponse);
+      handleReports.mockResolvedValue(mockResponse);
 
       const mockRequest = new Request('https://example.com/reports');
 
       const response = await handleRequest(mockRequest, mockEnv, mockContext);
       
-      expect(handleReportsGet).toHaveBeenCalledWith(mockRequest, mockEnv, mockContext);
+      expect(handleReports).toHaveBeenCalledWith(mockRequest, mockEnv, mockContext);
       expect(response).toBe(mockResponse);
     });
 
