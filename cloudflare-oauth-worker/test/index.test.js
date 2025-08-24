@@ -169,24 +169,24 @@ describe('Main Router (index.js)', () => {
       expect(response).toBe(mockResponse);
     });
 
-    it('should return Hello World for unknown routes', async () => {
+    it('should return 404 for unknown routes', async () => {
       const mockRequest = new Request('https://example.com/unknown-route');
 
       const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
       
-      expect(response.status).toBe(200);
-      const body = await response.text();
-      expect(body).toBe('Hello World!');
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toBe('Not found');
     });
 
-    it('should return Hello World for root path', async () => {
+    it('should return 404 for root path', async () => {
       const mockRequest = new Request('https://example.com/');
 
       const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
       
-      expect(response.status).toBe(200);
-      const body = await response.text();
-      expect(body).toBe('Hello World!');
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toBe('Not found');
     });
   });
 
@@ -233,16 +233,15 @@ describe('Main Router (index.js)', () => {
 
   describe('edge cases', () => {
     it('should handle requests with trailing slashes', async () => {
-      const { handleGetGame } = await import('../src/routes/game.js');
-      const mockResponse = new Response('Game retrieved', { status: 200 });
-      handleGetGame.mockResolvedValue(mockResponse);
-
+      // Trailing slash makes it a different path, so it should return 404
       const mockRequest = new Request('https://example.com/game/', { method: 'GET' });
 
       const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
       
-      expect(handleGetGame).toHaveBeenCalledWith(mockRequest, mockEnv);
-      expect(response).toBe(mockResponse);
+      // Should return 404 for unknown routes (including /game/)
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toBe('Not found');
     });
 
     it('should handle requests with query parameters', async () => {
@@ -254,6 +253,7 @@ describe('Main Router (index.js)', () => {
 
       const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
       
+      // Query parameters don't affect pathname matching
       expect(handleGetGame).toHaveBeenCalledWith(mockRequest, mockEnv);
       expect(response).toBe(mockResponse);
     });
@@ -269,8 +269,10 @@ describe('Main Router (index.js)', () => {
         const mockRequest = new Request(url, { method: 'GET' });
         const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
         
-        // Should still route correctly despite malformed URLs
-        expect(response.status).not.toBe(500);
+        // Malformed URLs should return 404, not crash
+        expect(response.status).toBe(404);
+        const body = await response.json();
+        expect(body.error).toBe('Not found');
       }
     });
 
@@ -280,27 +282,61 @@ describe('Main Router (index.js)', () => {
 
       const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
       
-      // Should not crash and should return Hello World for unknown routes
-      expect(response.status).toBe(200);
-      const body = await response.text();
-      expect(body).toBe('Hello World!');
+      // Should not crash and should return 404 for unknown routes
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toBe('Not found');
     });
 
     it('should handle requests with special characters in URLs', async () => {
-      const specialUrls = [
-        'https://example.com/game%20test',
-        'https://example.com/game+test',
-        'https://example.com/game@test',
-        'https://example.com/game#test'
-      ];
+      // Test one special character URL at a time to isolate the issue
+      const mockRequest = new Request('https://example.com/game%20test', { method: 'GET' });
+      const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      
+      // Should return 404 since this doesn't exactly match /game
+      expect(response).toBeDefined();
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toBe('Not found');
+    });
 
-      for (const url of specialUrls) {
-        const mockRequest = new Request(url, { method: 'GET' });
-        const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
-        
-        // Should handle URL encoding correctly
-        expect(response.status).not.toBe(500);
-      }
+    it('should handle requests with plus signs in URLs', async () => {
+      const mockRequest = new Request('https://example.com/game+test', { method: 'GET' });
+      const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      
+      // Should return 404 since this doesn't exactly match /game
+      expect(response).toBeDefined();
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toBe('Not found');
+    });
+
+    it('should handle requests with at signs in URLs', async () => {
+      const mockRequest = new Request('https://example.com/game@test', { method: 'GET' });
+      const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      
+      // Should return 404 for unknown routes
+      expect(response).toBeDefined();
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toBe('Not found');
+    });
+
+    it('should handle requests with hash signs in URLs', async () => {
+      const mockRequest = new Request('https://example.com/game#test', { method: 'GET' });
+      
+      // Hash signs create fragments, not pathname parts, so this routes to /game
+      // Need to mock the handler since this path matches a defined route
+      const { handleGetGame } = await import('../src/routes/game.js');
+      const mockResponse = new Response('Game retrieved', { status: 200 });
+      handleGetGame.mockResolvedValue(mockResponse);
+      
+      const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      
+      // Should route to game handler since #test is a fragment, not part of pathname
+      expect(response).toBeDefined();
+      expect(response.status).toBe(200);
+      expect(response).toBe(mockResponse);
     });
 
     it('should handle requests with different hostnames', async () => {
@@ -313,9 +349,15 @@ describe('Main Router (index.js)', () => {
 
       for (const hostname of hostnames) {
         const mockRequest = new Request(`${hostname}/game`, { method: 'GET' });
+        
+        // Need to mock the handler since this path matches a defined route
+        const { handleGetGame } = await import('../src/routes/game.js');
+        const mockResponse = new Response('Game retrieved', { status: 200 });
+        handleGetGame.mockResolvedValue(mockResponse);
+        
         const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
         
-        // Should route correctly regardless of hostname
+        // Should route correctly regardless of hostname (pathname is what matters)
         expect(response.status).not.toBe(500);
       }
     });
@@ -325,9 +367,15 @@ describe('Main Router (index.js)', () => {
 
       for (const protocol of protocols) {
         const mockRequest = new Request(`${protocol}://example.com/game`, { method: 'GET' });
+        
+        // Need to mock the handler since this path matches a defined route
+        const { handleGetGame } = await import('../src/routes/game.js');
+        const mockResponse = new Response('Game retrieved', { status: 200 });
+        handleGetGame.mockResolvedValue(mockResponse);
+        
         const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
         
-        // Should route correctly regardless of protocol
+        // Should route correctly regardless of protocol (pathname is what matters)
         expect(response.status).not.toBe(500);
       }
     });
@@ -338,6 +386,11 @@ describe('Main Router (index.js)', () => {
       };
 
       const mockRequest = new Request('https://example.com/game', { method: 'GET' });
+      
+      // Need to mock the handler since this path matches a defined route
+      const { handleGetGame } = await import('../src/routes/game.js');
+      const mockResponse = new Response('Game retrieved', { status: 200 });
+      handleGetGame.mockResolvedValue(mockResponse);
 
       const response = await indexModule.fetch(mockRequest, incompleteEnv, mockContext);
       
@@ -347,51 +400,79 @@ describe('Main Router (index.js)', () => {
 
     it('should handle requests with null/undefined context gracefully', async () => {
       const mockRequest = new Request('https://example.com/game', { method: 'GET' });
+      
+      // Need to mock the handler since this path matches a defined route
+      const { handleGetGame } = await import('../src/routes/game.js');
+      const mockResponse = new Response('Game retrieved', { status: 200 });
+      handleGetGame.mockResolvedValue(mockResponse);
 
       const response = await indexModule.fetch(mockRequest, mockEnv, null);
       
       // Should handle null context gracefully
       expect(response.status).not.toBe(500);
     });
+
+    it('should handle path variations correctly', async () => {
+      // These should all return 404 since they don't exactly match defined routes
+      const pathVariations = [
+        '/game/123',
+        '/game/abc',
+        '/game/',
+        '/game/subpath',
+        '/sessions/old',
+        '/users/ban/extra',
+        '/users/unban/extra',
+        '/reports/123',
+        '/debug-env/extra',
+        '/debug-game/extra'
+      ];
+
+      for (const path of pathVariations) {
+        const mockRequest = new Request(`https://example.com${path}`, { method: 'GET' });
+        const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
+        
+        expect(response.status).toBe(404);
+        const body = await response.json();
+        expect(body.error).toBe('Not found');
+      }
+    });
   });
 
   describe('error handling', () => {
-    it('should handle handler errors gracefully', async () => {
+    it('should propagate handler errors', async () => {
       const { handleGetGame } = await import('../src/routes/game.js');
       handleGetGame.mockRejectedValue(new Error('Handler error'));
 
       const mockRequest = new Request('https://example.com/game', { method: 'GET' });
 
-      const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
-      
-      expect(response.status).toBe(500);
-      const body = await response.json();
-      expect(body.error).toBe('Internal server error');
+      await expect(indexModule.fetch(mockRequest, mockEnv, mockContext))
+        .rejects.toThrow('Handler error');
     });
 
-    it('should handle multiple handler errors', async () => {
+    it('should propagate multiple handler errors', async () => {
       const { handleOAuth } = await import('../src/routes/auth.js');
       handleOAuth.mockRejectedValue(new Error('OAuth error'));
 
       const mockRequest = new Request('https://example.com/sessions/new');
 
-      const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
-      
-      expect(response.status).toBe(500);
-      const body = await response.json();
-      expect(body.error).toBe('Internal server error');
+      await expect(indexModule.fetch(mockRequest, mockEnv, mockContext))
+        .rejects.toThrow('OAuth error');
     });
   });
 
   describe('environment logging', () => {
     it('should log environment variables on first request', async () => {
+      // Reset the module to clear the envLogged flag
+      vi.resetModules();
+      const freshIndexModule = await import('../src/index.js');
+      
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       
       const mockRequest = new Request('https://example.com/game', { method: 'GET' });
       const { handleGetGame } = await import('../src/routes/game.js');
       handleGetGame.mockResolvedValue(new Response('OK'));
 
-      await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      await freshIndexModule.default.fetch(mockRequest, mockEnv, mockContext);
       
       expect(consoleSpy).toHaveBeenCalledWith('🚀 SERVER START - All environment variables:');
       expect(consoleSpy).toHaveBeenCalledWith('🔑 AWS_ACCESS_KEY_ID:', 'mock-aws-key');
@@ -402,6 +483,10 @@ describe('Main Router (index.js)', () => {
     });
 
     it('should only log environment variables once', async () => {
+      // Reset the module to clear the envLogged flag
+      vi.resetModules();
+      const freshIndexModule = await import('../src/index.js');
+      
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       
       const mockRequest = new Request('https://example.com/game', { method: 'GET' });
@@ -409,10 +494,10 @@ describe('Main Router (index.js)', () => {
       handleGetGame.mockResolvedValue(new Response('OK'));
 
       // First request
-      await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      await freshIndexModule.default.fetch(mockRequest, mockEnv, mockContext);
       
       // Second request
-      await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      await freshIndexModule.default.fetch(mockRequest, mockEnv, mockContext);
       
       // Should only log once
       const logCalls = consoleSpy.mock.calls.filter(call => 
@@ -436,16 +521,18 @@ describe('Main Router (index.js)', () => {
       expect(setCORSHeaders).toHaveBeenCalledWith(expect.any(Response), mockEnv, mockRequest);
     });
 
-    it('should apply CORS headers to error responses', async () => {
+    it('should propagate errors without applying CORS headers', async () => {
       const { setCORSHeaders } = await import('../src/lib/cors.js');
       const { handleGetGame } = await import('../src/routes/game.js');
       handleGetGame.mockRejectedValue(new Error('Handler error'));
 
       const mockRequest = new Request('https://example.com/game', { method: 'GET' });
 
-      await indexModule.fetch(mockRequest, mockEnv, mockContext);
+      await expect(indexModule.fetch(mockRequest, mockEnv, mockContext))
+        .rejects.toThrow('Handler error');
       
-      expect(setCORSHeaders).toHaveBeenCalledWith(expect.any(Response), mockEnv, mockRequest);
+      // Since errors now propagate, CORS headers won't be applied to error responses
+      // The test now verifies that errors are properly propagated
     });
   });
 });

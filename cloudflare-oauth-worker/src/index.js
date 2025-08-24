@@ -40,54 +40,49 @@ export default {
 		const url = new URL(request.url);
 		let response;
 
-		try {
-			// Route requests to appropriate handlers
-			if (url.pathname === '/sessions/new') {
-				response = await handleOAuth(request, env, url);
-			} else if (url.pathname === '/validate-session') {
-				response = await handleSessionValidation(request, env);
-			} else if (url.pathname === '/game') {
-				if (request.method === 'GET') {
-					response = await handleGetGame(request, env);
-				} else if (request.method === 'PUT') {
-					response = await handlePutGame(request, env);
-				} else {
-					response = new Response(JSON.stringify({ error: 'Unsupported request method' }), { 
-						status: 405, 
-						headers: { 'Content-Type': 'application/json' } 
-					});
-				}
-			} else if (url.pathname === '/users/ban') {
-				if (request.method === 'PUT') {
-					response = await handleBanUser(request, env);
-				} else {
-					response = new Response(JSON.stringify({ error: 'Method not allowed' }), { 
-						status: 405, 
-						headers: { 'Content-Type': 'application/json' } 
-					});
-				}
-			} else if (url.pathname === '/users/unban') {
-				if (request.method === 'PUT') {
-					response = await handleUnbanUser(request, env);
-				} else {
-					response = new Response(JSON.stringify({ error: 'Method not allowed' }), { 
-						status: 405, 
-						headers: { 'Content-Type': 'application/json' } 
-					});
-				}
-			} else if (url.pathname === '/reports') {
-				response = await handleReports(request, env);
-			} else if (url.pathname === '/debug-env') {
-				response = await handleDebugEnv(request, env, ctx);
-			} else if (url.pathname === '/debug-game') {
-				response = await handleDebugGame(request, env, ctx);
+		// Route requests to appropriate handlers
+		if (url.pathname === '/sessions/new') {
+			response = await handleOAuth(request, env, url);
+		} else if (url.pathname === '/validate-session') {
+			response = await handleSessionValidation(request, env);
+		} else if (url.pathname === '/game') {
+			if (request.method === 'GET') {
+				response = await handleGetGame(request, env);
+			} else if (request.method === 'PUT') {
+				response = await handlePutGame(request, env);
 			} else {
-				response = new Response('Hello World!');
+				response = new Response(JSON.stringify({ error: 'Unsupported request method' }), { 
+					status: 405, 
+					headers: { 'Content-Type': 'application/json' } 
+				});
 			}
-		} catch (error) {
-			console.error('❌ Error handling request:', error);
-			response = new Response(JSON.stringify({ error: 'Internal server error' }), { 
-				status: 500, 
+		} else if (url.pathname === '/users/ban') {
+			if (request.method === 'PUT') {
+				response = await handleBanUser(request, env);
+			} else {
+				response = new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+					status: 405, 
+					headers: { 'Content-Type': 'application/json' } 
+				});
+			}
+		} else if (url.pathname === '/users/unban') {
+			if (request.method === 'PUT') {
+				response = await handleUnbanUser(request, env);
+			} else {
+				response = new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+					status: 405, 
+					headers: { 'Content-Type': 'application/json' } 
+				});
+			}
+		} else if (url.pathname === '/reports') {
+			response = await handleReports(request, env);
+		} else if (url.pathname === '/debug-env') {
+			response = await handleDebugEnv(request, env, ctx);
+		} else if (url.pathname === '/debug-game') {
+			response = await handleDebugGame(request, env, ctx);
+		} else {
+			response = new Response(JSON.stringify({ error: 'Not found' }), { 
+				status: 404, 
 				headers: { 'Content-Type': 'application/json' } 
 			});
 		}
