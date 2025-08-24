@@ -34,6 +34,15 @@ export async function handleReports(request, env) {
 	const gameData = await gameDataResponse.json();
 	console.log('📊 /reports - Retrieved game data:', gameData);
 	
+	// Handle null or undefined game data
+	if (!gameData || !Array.isArray(gameData)) {
+		return new Response(JSON.stringify({ 
+			message: 'No game data available',
+			monthYear: currentMonthYear,
+			gameData: []
+		}), { headers: { 'Content-Type': 'application/json' } });
+	}
+	
 	// Check if user is admin
 	const adminStatus = await isAdmin(email);
 	

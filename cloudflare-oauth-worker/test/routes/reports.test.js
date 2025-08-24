@@ -50,8 +50,8 @@ describe('Reports Routes - handleReports', () => {
   describe('handleReports', () => {
     describe('happy path', () => {
       it('should return full game data for admin users', async () => {
-        const { getEmailFromSessionToken, isAdmin, getCurrentMonthYear } = await import('../../src/lib/auth.js');
-        const { anonymizeEmail } = await import('../../src/lib/utils.js');
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        const { anonymizeEmail, getCurrentMonthYear } = await import('../../src/lib/utils.js');
         
         getEmailFromSessionToken.mockResolvedValue('admin@example.com');
         isAdmin.mockResolvedValue(true);
@@ -82,8 +82,8 @@ describe('Reports Routes - handleReports', () => {
       });
 
       it('should return anonymized game data for non-admin users', async () => {
-        const { getEmailFromSessionToken, isAdmin, getCurrentMonthYear } = await import('../../src/lib/auth.js');
-        const { anonymizeEmail } = await import('../../src/lib/utils.js');
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        const { anonymizeEmail, getCurrentMonthYear } = await import('../../src/lib/utils.js');
         
         getEmailFromSessionToken.mockResolvedValue('user@example.com');
         isAdmin.mockResolvedValue(false);
@@ -145,7 +145,8 @@ describe('Reports Routes - handleReports', () => {
       });
 
       it('should handle game data retrieval errors gracefully', async () => {
-        const { getEmailFromSessionToken, isAdmin, getCurrentMonthYear } = await import('../../src/lib/auth.js');
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        const { getCurrentMonthYear } = await import('../../src/lib/utils.js');
         
         getEmailFromSessionToken.mockResolvedValue('admin@example.com');
         isAdmin.mockResolvedValue(true);
@@ -172,8 +173,8 @@ describe('Reports Routes - handleReports', () => {
 
     describe('edge cases', () => {
       it('should handle empty game data', async () => {
-        const { getEmailFromSessionToken, isAdmin, getCurrentMonthYear } = await import('../../src/lib/auth.js');
-        const { anonymizeEmail } = await import('../../src/lib/utils.js');
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        const { anonymizeEmail, getCurrentMonthYear } = await import('../../src/lib/utils.js');
         
         getEmailFromSessionToken.mockResolvedValue('admin@example.com');
         isAdmin.mockResolvedValue(true);
@@ -200,7 +201,8 @@ describe('Reports Routes - handleReports', () => {
       });
 
       it('should handle malformed game data response', async () => {
-        const { getEmailFromSessionToken, isAdmin, getCurrentMonthYear } = await import('../../src/lib/auth.js');
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        const { getCurrentMonthYear } = await import('../../src/lib/utils.js');
         
         getEmailFromSessionToken.mockResolvedValue('admin@example.com');
         isAdmin.mockResolvedValue(true);
@@ -218,11 +220,12 @@ describe('Reports Routes - handleReports', () => {
           }
         });
 
-        // This should not throw an error, but the test will fail if it does
-        // The actual function doesn't have error handling for malformed responses
-        expect(async () => {
-          await handleReports(mockRequest, mockEnv);
-        }).rejects.toThrow('Cannot read properties of null (reading \'map\')');
+        // The function should handle null data gracefully and return an empty array
+        // This test documents the current behavior
+        const response = await handleReports(mockRequest, mockEnv);
+        expect(response.status).toBe(200);
+        const body = await response.json();
+        expect(body.gameData).toEqual([]);
       });
     });
   });
