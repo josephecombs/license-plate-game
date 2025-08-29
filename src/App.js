@@ -5,6 +5,7 @@ import OAuthButton from './components/OAuthButton';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import Reports from './components/Reports';
+import BannedUserModal from './components/BannedUserModal';
 import './App.css';
 import Cookies from 'js-cookie';
 
@@ -26,6 +27,8 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showBannedModal, setShowBannedModal] = useState(false);
+  const [banData, setBanData] = useState(null);
   const progressPercentage = ((visitedStates.length / 50) * 100).toFixed(2);
 
   useEffect(() => {
@@ -100,14 +103,18 @@ function AppContent() {
       })
       .then(response => {
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json().then(errorData => {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          });
         }
         return response.json();
       })
       .then(data => {
-        const serverVisitedStates = data.visitedStates ?? [];
-        setVisitedStates(serverVisitedStates);
-        localStorage.setItem('visitedStates', JSON.stringify(serverVisitedStates));
+        if (data.visitedStates !== undefined) {
+          const serverVisitedStates = data.visitedStates ?? [];
+          setVisitedStates(serverVisitedStates);
+          localStorage.setItem('visitedStates', JSON.stringify(serverVisitedStates));
+        }
       })
       .catch(error => console.error('Error fetching game state:', error));
     }
@@ -201,13 +208,26 @@ function AppContent() {
                 )}
               </div>
             </div>
-            <Map user={user} visitedStates={visitedStates} setVisitedStates={setVisitedStates} />
+            <Map 
+              user={user} 
+              visitedStates={visitedStates} 
+              setVisitedStates={setVisitedStates}
+              onBannedUser={(banData) => {
+                setBanData(banData);
+                setShowBannedModal(true);
+              }}
+            />
           </header>
         } />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/reports" element={<Reports />} />
       </Routes>
+      <BannedUserModal
+        isOpen={showBannedModal}
+        onClose={() => setShowBannedModal(false)}
+        banData={banData}
+      />
     </div>
   );
 }

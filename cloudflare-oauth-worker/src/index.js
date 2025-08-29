@@ -40,6 +40,23 @@ export default {
 		const url = new URL(request.url);
 		let response;
 
+		// Handle CORS preflight OPTIONS requests
+		if (request.method === 'OPTIONS') {
+			const allowedOrigins = env.NODE_ENV === 'production' 
+				? ['https://www.platechase.com', 'https://api.platechase.com'] 
+				: ['http://localhost:3000'];
+			const origin = request.headers.get('Origin');
+			const headers = new Headers();
+			
+			if (allowedOrigins.includes(origin)) {
+				headers.set('Access-Control-Allow-Origin', origin);
+			}
+			headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT');
+			headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+			
+			return new Response(null, { status: 204, headers });
+		}
+
 		// Route requests to appropriate handlers
 		if (url.pathname === '/sessions/new') {
 			response = await handleOAuth(request, env, url);

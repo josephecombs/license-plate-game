@@ -7,9 +7,10 @@ import LoginModal from './LoginModal';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-const Map = ({ user, visitedStates, setVisitedStates }) => {
+const Map = ({ user, visitedStates, setVisitedStates, onBannedUser }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+
 
   useEffect(() => {
     localStorage.setItem('visitedStates', JSON.stringify(visitedStates));
@@ -31,7 +32,7 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
     
     // Send to server since user is logged in
     try {
-      await fetch(`${API_BASE_URL}/game`, {
+      const response = await fetch(`${API_BASE_URL}/game`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -42,8 +43,28 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
           progress: ((newVisitedStates.length / 50) * 100).toFixed(2)
         })
       });
+
+      console.log({response})
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 403 && errorData.error === 'Account banned') {
+          // Revert the state change since the user is banned
+          setVisitedStates(visitedStates);
+          if (onBannedUser) {
+            onBannedUser(errorData);
+          }
+          return;
+        } else {
+          console.error('Failed to save game state:', errorData);
+          // Revert the state change on any error
+          setVisitedStates(visitedStates);
+        }
+      }
     } catch (error) {
       console.error('Failed to save game state:', error);
+      // Revert the state change on network error
+      setVisitedStates(visitedStates);
     }
 
     // Reset the animation trigger after animation completes
@@ -126,6 +147,7 @@ const Map = ({ user, visitedStates, setVisitedStates }) => {
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
       />
+
     </div>
   );
 };
