@@ -372,64 +372,144 @@ function Reports() {
                 Administrative actions for user: <strong>{selectedUser?.email}</strong>
               </p>
               
-              <button
-                onClick={async () => {
-                  const confirmBan = window.confirm(
-                    `Are you sure you want to ban ${selectedUser?.email} and purge all their information from the system?\n\n` +
-                    `This action will:\n` +
-                    `• Mark the user as banned\n` +
-                    `• Remove all their game data\n` +
-                    `• Prevent future access to the system\n\n`
-                  );
-                  
-                  if (confirmBan) {
-                    try {
-                      const response = await fetch(`${API_BASE_URL}/users/ban`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': sessionId
-                        },
-                        body: JSON.stringify({ email: selectedUser.email })
-                      });
-                      
-                      if (response.ok) {
-                        const result = await response.json();
-                        alert(`User ${selectedUser.email} has been banned successfully.`);
-                        closeModal();
-                        // Refresh the page to show updated data
-                        window.location.reload();
-                      } else {
-                        const errorData = await response.json();
-                        alert(`Failed to ban user: ${errorData.error || 'Unknown error'}`);
+              {/* Show current ban status */}
+              {selectedUser?.bannedAt && (
+                <div style={{
+                  background: 'rgba(244, 67, 54, 0.1)',
+                  border: '1px solid rgba(244, 67, 54, 0.3)',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginBottom: '1.5rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: '#f44336', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    🚫 User is currently banned
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: '#888' }}>
+                    Banned on: {new Date(selectedUser.bannedAt * 1000).toLocaleDateString()}
+                  </div>
+                </div>
+              )}
+              
+              {/* Ban/Unban button */}
+              {selectedUser?.bannedAt ? (
+                <button
+                  onClick={async () => {
+                    const confirmUnban = window.confirm(
+                      `Are you sure you want to unban ${selectedUser?.email}?\n\n` +
+                      `This action will:\n` +
+                      `• Remove the ban from the user\n` +
+                      `• Allow them to access the system again\n` +
+                      `• Preserve their existing game data\n\n`
+                    );
+                    
+                    if (confirmUnban) {
+                      try {
+                        const response = await fetch(`${API_BASE_URL}/users/unban`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': sessionId
+                          },
+                          body: JSON.stringify({ email: selectedUser.email })
+                        });
+                        
+                        if (response.ok) {
+                          const result = await response.json();
+                          alert(`User ${selectedUser.email} has been unbanned successfully.`);
+                          closeModal();
+                          // Refresh the page to show updated data
+                          window.location.reload();
+                        } else {
+                          const errorData = await response.json();
+                          alert(`Failed to unban user: ${errorData.error || 'Unknown error'}`);
+                        }
+                      } catch (error) {
+                        console.error('Error unbanning user:', error);
+                        alert(`Error unbanning user: ${error.message}`);
                       }
-                    } catch (error) {
-                      console.error('Error banning user:', error);
-                      alert(`Error banning user: ${error.message}`);
                     }
-                  }
-                }}
-                style={{
-                  background: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '6px',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  width: '100%'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#d32f2f';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = '#f44336';
-                }}
-              >
-                🚫 Ban User & Purge Data
-              </button>
+                  }}
+                  style={{
+                    background: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    width: '100%'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#45a049';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#4CAF50';
+                  }}
+                >
+                  ✅ Unban User
+                </button>
+              ) : (
+                <button
+                  onClick={async () => {
+                    const confirmBan = window.confirm(
+                      `Are you sure you want to ban ${selectedUser?.email}?\n\n` +
+                      `This action will:\n` +
+                      `• Mark the user as banned\n` +
+                      `• Prevent future access to the system\n`
+                    );
+                    
+                    if (confirmBan) {
+                      try {
+                        const response = await fetch(`${API_BASE_URL}/users/ban`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': sessionId
+                          },
+                          body: JSON.stringify({ email: selectedUser.email })
+                        });
+                        
+                        if (response.ok) {
+                          const result = await response.json();
+                          alert(`User ${selectedUser.email} has been banned successfully.`);
+                          closeModal();
+                          // Refresh the page to show updated data
+                          window.location.reload();
+                        } else {
+                          const errorData = await response.json();
+                          alert(`Failed to ban user: ${errorData.error || 'Unknown error'}`);
+                        }
+                      } catch (error) {
+                        console.error('Error banning user:', error);
+                        alert(`Error banning user: ${error.message}`);
+                      }
+                    }
+                  }}
+                  style={{
+                    background: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    width: '100%'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#d32f2f';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#f44336';
+                  }}
+                >
+                  🚫 Ban User
+                </button>
+              )}
               
               <p style={{ 
                 fontSize: '0.8rem', 
