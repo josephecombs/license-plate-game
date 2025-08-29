@@ -110,10 +110,14 @@ function Reports() {
     );
   }
 
-  const totalUsers = gameData.length;
-  const totalStates = gameData.reduce((sum, user) => sum + (user.gameData?.visitedStates?.length || 0), 0);
+  // Filter out banned users for statistics and main list
+  const nonBannedUsers = gameData.filter(user => !user.bannedAt || typeof user.bannedAt !== 'number');
+  const bannedUsers = gameData.filter(user => user.bannedAt && typeof user.bannedAt === 'number');
+  
+  const totalUsers = nonBannedUsers.length;
+  const totalStates = nonBannedUsers.reduce((sum, user) => sum + (user.gameData?.visitedStates?.length || 0), 0);
   const averageProgress = totalUsers > 0 
-    ? (gameData.reduce((sum, user) => sum + parseFloat(user.gameData?.progress || 0), 0) / totalUsers).toFixed(2)
+    ? (nonBannedUsers.reduce((sum, user) => sum + parseFloat(user.gameData?.progress || 0), 0) / totalUsers).toFixed(2)
     : 0;
 
   return (
@@ -131,6 +135,9 @@ function Reports() {
 
       <section>
         <h2>Monthly Overview - {monthYear}</h2>
+        <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1rem', fontStyle: 'italic' }}>
+          Statistics shown below exclude banned users
+        </p>
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
@@ -146,6 +153,9 @@ function Reports() {
           }}>
             <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{totalUsers}</div>
             <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Active Users</div>
+            <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '0.25rem' }}>
+              {bannedUsers.length > 0 && `+${bannedUsers.length} banned`}
+            </div>
           </div>
           
           <div style={{
@@ -156,7 +166,7 @@ function Reports() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{totalStates}</div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Total States Spotted</div>
+            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>States by Active Users</div>
           </div>
           
           <div style={{
@@ -167,14 +177,14 @@ function Reports() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{averageProgress}%</div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Average Progress</div>
+            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Avg Progress (Active)</div>
           </div>
         </div>
       </section>
 
       <section>
-        <h2>User Progress Details</h2>
-        <p>Total registered users: <strong>{totalUsers}</strong></p>
+        <h2>Active User Progress Details</h2>
+        <p>Total active users: <strong>{totalUsers}</strong> | Banned users: <strong style={{ color: '#f44336' }}>{bannedUsers.length}</strong></p>
         
         {totalUsers > 0 ? (
           <div style={{ marginTop: '1.5rem' }}>
@@ -183,7 +193,7 @@ function Reports() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', 
               gap: '1.5rem'
             }}>
-              {gameData.map((user) => {
+              {nonBannedUsers.map((user) => {
                 const visitedStates = user.gameData?.visitedStates || [];
                 const progress = user.gameData?.progress || '0.00';
                 const progressColor = getProgressColor(progress);
@@ -527,7 +537,6 @@ function Reports() {
 
       {/* Banned Users Section */}
       {(() => {
-        const bannedUsers = gameData.filter(user => user.bannedAt && typeof user.bannedAt === 'string');
         if (bannedUsers.length > 0 && adminStatus === 'Authenticated as Admin') {
           return (
             <section>
@@ -544,7 +553,7 @@ function Reports() {
                 {bannedUsers.map((user) => {
                   const visitedStates = user.gameData?.visitedStates || [];
                   const progress = user.gameData?.progress || '0.00';
-                  const bannedDate = new Date(user.bannedAt).toLocaleDateString();
+                  const bannedDate = new Date(user.bannedAt * 1000).toLocaleDateString();
                   
                   return (
                     <div key={user.email} style={{
@@ -636,6 +645,34 @@ function Reports() {
                           </div>
                         </div>
                       )}
+                      
+                      {/* More Actions Button for Banned Users */}
+                      <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                        <button
+                          onClick={() => openModal(user)}
+                          style={{
+                            background: 'rgba(76, 175, 80, 0.1)',
+                            color: '#4CAF50',
+                            border: '1px solid rgba(76, 175, 80, 0.3)',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '6px',
+                            fontSize: '0.8rem',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'rgba(76, 175, 80, 0.2)';
+                            e.target.style.borderColor = 'rgba(76, 175, 80, 0.5)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'rgba(76, 175, 80, 0.1)';
+                            e.target.style.borderColor = 'rgba(76, 175, 80, 0.3)';
+                          }}
+                        >
+                          More Actions
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
