@@ -43,48 +43,6 @@ export class Game extends DurableObject {
 				});
 			}
 			return new Response(JSON.stringify(users), { headers: { 'Content-Type': 'application/json' } });
-		} else if (url.hostname === 'ban-user') {
-			// Ban user by setting bannedAt to current UTC time
-			const { email } = await request.json();
-			console.log('🚫 Banning user:', email);
-			
-			if (gameData[email]) {
-				gameData[email].bannedAt = new Date().toISOString();
-				await this.ctx.storage.put('gameData', gameData);
-				console.log('✅ User banned:', email, 'at:', gameData[email].bannedAt);
-				
-				return new Response(JSON.stringify({ 
-					success: true, 
-					message: `User ${email} has been banned`,
-					bannedAt: gameData[email].bannedAt
-				}), { headers: { 'Content-Type': 'application/json' } });
-			} else {
-				return new Response(JSON.stringify({ error: 'User not found' }), { 
-					status: 404, 
-					headers: { 'Content-Type': 'application/json' } 
-				});
-			}
-		} else if (url.hostname === 'unban-user') {
-			// Unban user by setting bannedAt to undefined
-			const { email } = await request.json();
-			console.log('✅ Unbanning user:', email);
-			
-			if (gameData[email]) {
-				gameData[email].bannedAt = undefined;
-				await this.ctx.storage.put('gameData', gameData);
-				console.log('✅ User unbanned:', email);
-				
-				return new Response(JSON.stringify({ 
-					success: true, 
-					message: `User ${email} has been unbanned`,
-					bannedAt: gameData[email].bannedAt
-				}), { headers: { 'Content-Type': 'application/json' } });
-			} else {
-				return new Response(JSON.stringify({ error: 'User not found' }), { 
-					status: 404, 
-					headers: { 'Content-Type': 'application/json' } 
-				});
-			}
 		}
 
 		return new Response('Method not allowed', { status: 405 });

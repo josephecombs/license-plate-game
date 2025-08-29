@@ -40,14 +40,12 @@ export async function handleBanUser(request, env) {
 		});
 	}
 
-	// Ban the user by updating their bannedAt timestamp
-	const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
-	const gameObjId = env.GAME.idFromName(currentMonthYear);
-	const gameObj = env.GAME.get(gameObjId);
+	// Ban the user by calling the User Durable Object
+	const userObjId = env.USER.idFromName(userEmail);
+	const userObj = env.USER.get(userObjId);
 
-	const banResponse = await gameObj.fetch(new Request('https://ban-user', {
+	const banResponse = await userObj.fetch(new Request('https://ban-user', {
 		method: 'POST',
-		body: JSON.stringify({ email: userEmail }),
 	}));
 
 	const banResult = await banResponse.json();
@@ -100,14 +98,12 @@ export async function handleUnbanUser(request, env) {
 		});
 	}
 
-	// Unban the user by setting bannedAt to undefined
-	const currentMonthYear = new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
-	const gameObjId = env.GAME.idFromName(currentMonthYear);
-	const gameObj = env.GAME.get(gameObjId);
+	// Unban the user by calling the User Durable Object
+	const userObjId = env.USER.idFromName(userEmail);
+	const userObj = env.USER.get(userObjId);
 
-	const unbanResponse = await gameObj.fetch(new Request('https://unban-user', {
+	const unbanResponse = await userObj.fetch(new Request('https://unban-user', {
 		method: 'POST',
-		body: JSON.stringify({ email: userEmail }),
 	}));
 
 	const unbanResult = await unbanResponse.json();
