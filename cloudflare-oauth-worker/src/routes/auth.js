@@ -60,7 +60,11 @@ export async function handleOAuth(request, env, url) {
 	console.log('🔑 Token exchange response:');
 	console.log('  Status:', tokenResponse.status);
 	console.log('  Status text:', tokenResponse.statusText);
-	console.log('  Headers:', Object.fromEntries(tokenResponse.headers.entries()));
+	try {
+		console.log('  Headers:', Object.fromEntries(tokenResponse.headers.entries()));
+	} catch (error) {
+		console.log('  Headers: [unavailable]');
+	}
 
 	const tokenData = await tokenResponse.json();
 	console.log('🔑 Token response data:', tokenData);

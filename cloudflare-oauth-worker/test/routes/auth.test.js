@@ -201,6 +201,56 @@ describe('Auth Routes', () => {
         expect(global.fetch).toHaveBeenCalledTimes(2);
       });
 
+      it('should NOT include CORS headers in OAuth responses', async () => {
+        // Mock successful OAuth flow
+        global.fetch = vi.fn()
+          .mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+              access_token: 'test-access-token',
+              token_type: 'Bearer'
+            })
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+              email: 'test@example.com',
+              name: 'Test User'
+            })
+          });
+
+        const response = await handleOAuth(new Request('https://example.com/sessions/new?code=test-auth-code'), mockEnv, mockUrl);
+        
+        // Verify response is a redirect (302)
+        expect(response.status).toBe(302);
+        expect(response.headers.get('Location')).toBe('http://localhost:3000');
+
+        // Verify NO CORS headers are present - OAuth doesn't need them
+        expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+        expect(response.headers.get('Access-Control-Allow-Methods')).toBeNull();
+        expect(response.headers.get('Access-Control-Allow-Headers')).toBeNull();
+
+        // Verify only the necessary headers are present
+        expect(response.headers.get('Set-Cookie')).toContain('session=');
+        expect(response.headers.get('Location')).toBe('http://localhost:3000');
+      });
+
+      it('should NOT include CORS headers in OAuth redirect to Google', async () => {
+        const request = new Request('https://example.com/sessions/new');
+        const url = new URL('https://example.com/sessions/new');
+
+        const response = await handleOAuth(request, mockEnv, url);
+
+        // Verify response is a redirect to Google (302)
+        expect(response.status).toBe(302);
+        expect(response.headers.get('Location')).toContain('accounts.google.com');
+
+        // Verify NO CORS headers are present
+        expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+        expect(response.headers.get('Access-Control-Allow-Methods')).toBeNull();
+        expect(response.headers.get('Access-Control-Allow-Headers')).toBeNull();
+      });
+
       it('should handle network errors during token exchange by crashing (current behavior)', async () => {
         // Test the ACTUAL current behavior - the function crashes on network errors
         global.fetch = vi.fn().mockRejectedValue(new Error('Network timeout'));
