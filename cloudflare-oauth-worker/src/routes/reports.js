@@ -27,7 +27,7 @@ export async function handleReports(request, env) {
 	const gameObj = env.GAME.get(gameObjId);
 	
 	// Get the full game data directly
-	const gameDataResponse = await gameObj.fetch(new Request('https://get-all-users', {
+	const gameDataResponse = await gameObj.fetch(new Request('https://get-all-games', {
 		method: 'POST',
 		body: JSON.stringify({ dummy: 'data' })
 	}));
@@ -46,11 +46,41 @@ export async function handleReports(request, env) {
 	// Check if user is admin
 	const adminStatus = await isAdmin(email);
 	
+	// For admin users, also fetch ban status from User DO for each user
+	let processedGameData = gameData;
+	if (adminStatus) {
+		// Fetch ban status for each user
+		const usersWithBanStatus = await Promise.all(
+			gameData.map(async (user) => {
+				try {
+					const userObjId = env.USER.idFromName(user.email);
+					const userObj = env.USER.get(userObjId);
+					const userResponse = await userObj.fetch(new Request('https://get-user'));
+					const userData = await userResponse.json();
+					
+					return {
+						...user,
+						bannedAt: userData?.bannedAt || null
+					};
+				} catch (error) {
+					console.error(`Error fetching ban status for ${user.email}:`, error);
+					return {
+						...user,
+						bannedAt: null
+					};
+				}
+			})
+		);
+		processedGameData = usersWithBanStatus;
+	}
+	
 	// Anonymize email addresses for non-admin users
-	const processedGameData = adminStatus ? gameData : gameData.map(user => ({
-		...user,
-		email: anonymizeEmail(user.email)
-	}));
+	if (!adminStatus) {
+		processedGameData = processedGameData.map(user => ({
+			...user,
+			email: anonymizeEmail(user.email)
+		}));
+	}
 	
 	return new Response(JSON.stringify({ 
 		message: adminStatus ? 'Authenticated as Admin' : 'Authenticated as User',

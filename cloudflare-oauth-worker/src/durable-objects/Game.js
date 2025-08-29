@@ -32,7 +32,7 @@ export class Game extends DurableObject {
 			const userGameState = gameData[email] || {};
 			console.log('📖 Retrieved game state:', userGameState);
 			return new Response(JSON.stringify(userGameState), { headers: { 'Content-Type': 'application/json' } });
-		} else if (url.hostname === 'get-all-users') {
+		} else if (url.hostname === 'get-all-games') {
 			// Return structured data with user emails and their game data
 			const users = [];
 			console.log('Current gameData:', gameData);
