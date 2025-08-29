@@ -140,7 +140,7 @@ describe('Users Routes', () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
