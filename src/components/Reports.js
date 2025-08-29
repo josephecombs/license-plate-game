@@ -598,53 +598,10 @@ function Reports() {
                           <div style={{ fontSize: '0.9rem', color: '#888' }}>
                             Banned on: {bannedDate}
                           </div>
-                          <div style={{ fontSize: '0.9rem', color: '#888' }}>
-                            {visitedStates.length} states spotted
-                          </div>
-                        </div>
-                        <div style={{
-                          background: '#f44336',
-                          color: 'white',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '20px',
-                          fontWeight: 'bold',
-                          fontSize: '0.9rem'
-                        }}>
-                          {progress}%
                         </div>
                       </div>
                       
-                      {visitedStates.length > 0 && (
-                        <div>
-                          <div style={{ 
-                            fontSize: '0.9rem', 
-                            color: '#888', 
-                            marginBottom: '0.5rem',
-                            fontWeight: '500'
-                          }}>
-                            States Collected:
-                          </div>
-                          <div style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.5rem'
-                          }}>
-                            {visitedStates.map((stateId) => (
-                              <span key={stateId} style={{
-                                background: 'rgba(244, 67, 54, 0.1)',
-                                color: '#f44336',
-                                padding: '0.25rem 0.75rem',
-                                borderRadius: '15px',
-                                fontSize: '0.8rem',
-                                fontWeight: '500',
-                                border: '1px solid rgba(244, 67, 54, 0.2)'
-                              }}>
-                                {getStateName(stateId)}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+
                       
                       {/* More Actions Button for Banned Users */}
                       <div style={{ marginTop: '1rem', textAlign: 'center' }}>
