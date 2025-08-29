@@ -8,21 +8,43 @@ import { v4 as uuidv4 } from 'uuid';
  * Handle OAuth flow - redirect to Google or process callback
  */
 export async function handleOAuth(request, env, url) {
+	// Get the code from the URL parameters
 	const code = url.searchParams.get('code');
+	
+	console.log('🔐 OAuth Debug - URL parsing:');
+	console.log('  Full URL:', url.toString());
+	console.log('  Search params:', url.search);
+	console.log('  Code param:', code);
+	console.log('  All search params:');
+	for (const [key, value] of url.searchParams.entries()) {
+		console.log(`    ${key}: ${value}`);
+	}
+	
 	if (!code) {
 		// Redirect to Google's OAuth consent screen
+		const redirectUri = env.NODE_ENV === 'production' 
+			? 'https://api.platechase.com/sessions/new' 
+			: url.origin + '/sessions/new';
+		console.log('🔄 No code found - redirecting to Google OAuth with redirect_uri:', redirectUri);
 		return Response.redirect(
-			`https://accounts.google.com/o/oauth2/auth?client_id=${env.GOOGLE_OAUTH_CLIENT_ID}&redirect_uri=${
-				encodeURIComponent(
-					env.NODE_ENV === 'production' 
-						? 'https://api.platechase.com/sessions/new' 
-						: url.origin + '/sessions/new'
-				)
-			}&response_type=code&scope=email profile`,
+			`https://accounts.google.com/o/oauth2/auth?client_id=${env.GOOGLE_OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email profile`,
 			302
 		);
 	}
 
+	console.log('🔄 Code found, proceeding with token exchange...');
+	
+	const redirectUri = env.NODE_ENV === 'production' 
+		? 'https://api.platechase.com/sessions/new'
+		: url.origin + '/sessions/new';
+	
+	console.log('🔄 Token exchange details:');
+	console.log('  Code length:', code.length);
+	console.log('  Code preview:', code.substring(0, 50) + '...');
+	console.log('  Redirect URI:', redirectUri);
+	console.log('  Client ID:', env.GOOGLE_OAUTH_CLIENT_ID);
+	console.log('  Client Secret length:', env.GOOGLE_OAUTH_CLIENT_SECRET ? env.GOOGLE_OAUTH_CLIENT_SECRET.length : 'undefined');
+	
 	const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -30,28 +52,42 @@ export async function handleOAuth(request, env, url) {
 			code,
 			client_id: env.GOOGLE_OAUTH_CLIENT_ID,
 			client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-			redirect_uri: env.NODE_ENV === 'production' 
-				? 'https://api.platechase.com/sessions/new'
-				: url.origin + '/sessions/new',
+			redirect_uri: redirectUri,
 			grant_type: 'authorization_code',
 		}),
 	});
 
+	console.log('🔑 Token exchange response:');
+	console.log('  Status:', tokenResponse.status);
+	console.log('  Status text:', tokenResponse.statusText);
+	console.log('  Headers:', Object.fromEntries(tokenResponse.headers.entries()));
+
 	const tokenData = await tokenResponse.json();
+	console.log('🔑 Token response data:', tokenData);
+	
 	if (!tokenResponse.ok) {
-		console.error('Error exchanging code:', tokenData);
+		console.error('❌ Token exchange failed:', tokenData);
 		return new Response('Failed to exchange code: ' + tokenData.error, { status: 400 });
 	}
+
+	console.log('✅ Token exchange successful, fetching user info...');
 
 	// Fetch user info using the access token
 	const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
 		headers: { Authorization: `Bearer ${tokenData.access_token}` },
 	});
 
+	console.log('👤 User info response status:', userInfoResponse.status);
+
 	const userInfo = await userInfoResponse.json();
+	console.log('👤 User info:', userInfo);
+	
 	if (!userInfoResponse.ok) {
+		console.error('❌ Failed to fetch user info:', userInfo);
 		return new Response('Failed to fetch user info', { status: 500 });
 	}
+
+	console.log('✅ User info fetched successfully, creating user session...');
 
 	const userId = userInfo.email;
 	const userObjId = env.USER.idFromName(userId);
@@ -74,6 +110,12 @@ export async function handleOAuth(request, env, url) {
 	}));
 
 	const redirectUrl = env.NODE_ENV === 'production' ? 'https://www.platechase.com' : 'http://localhost:3000';
+	
+	console.log('🔄 Final redirect details:');
+	console.log('  Node env:', env.NODE_ENV);
+	console.log('  Redirect URL:', redirectUrl);
+	console.log('  Session token:', sessionToken ? sessionToken.substring(0, 10) + '...' : null);
+	console.log('  User ID:', userId);
 
 	return new Response(null, {
 		status: 302,

@@ -43,6 +43,8 @@ export default {
 		// Route requests to appropriate handlers
 		if (url.pathname === '/sessions/new') {
 			response = await handleOAuth(request, env, url);
+			// OAuth doesn't need CORS - return response directly
+			return response;
 		} else if (url.pathname === '/validate-session') {
 			response = await handleSessionValidation(request, env);
 		} else if (url.pathname === '/game') {
