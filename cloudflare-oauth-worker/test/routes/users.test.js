@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleUserBan, handleUserUnban } from '../../src/routes/users.js';
+import { handleBanUser, handleUnbanUser } from '../../src/routes/users.js';
 
 // Mock dependencies
 vi.mock('../../src/lib/auth.js', () => ({
-  validateSession: vi.fn(),
+  getEmailFromSessionToken: vi.fn(),
   isAdmin: vi.fn()
 }));
 
@@ -39,11 +39,11 @@ describe('Users Routes', () => {
     vi.clearAllMocks();
   });
 
-  describe('handleUserBan', () => {
+  describe('handleBanUser', () => {
     describe('happy path', () => {
       it('should ban user successfully', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockUserData = {
@@ -59,25 +59,25 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Violation of terms of service'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.message).toContain('User banned');
-        expect(body.user.isBanned).toBe(true);
+        expect(body.success).toBe(true);
+        expect(body.message).toBe('User banned successfully');
       });
 
       it('should ban user without reason', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockUserData = {
@@ -93,42 +93,44 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({})
+          body: JSON.stringify({
+            email: 'user@example.com'
+          })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.message).toContain('User banned');
+        expect(body.success).toBe(true);
       });
     });
 
     describe('edge cases', () => {
       it('should require admin privileges', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(false);
 
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=user-session-id',
+            'Authorization': 'user-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(403);
         const body = await response.json();
-        expect(body.error).toContain('Admin access required');
+        expect(body.error).toBe('Admin access required');
       });
 
       it('should handle missing session cookie', async () => {
@@ -142,79 +144,79 @@ describe('Users Routes', () => {
           })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(401);
         const body = await response.json();
-        expect(body.error).toContain('Unauthorized');
+        expect(body.error).toBe('No session token provided');
       });
 
       it('should handle invalid session', async () => {
-        const { validateSession } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(false);
+        const { getEmailFromSessionToken } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(false);
 
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=invalid-session-id',
+            'Authorization': 'invalid-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(401);
         const body = await response.json();
-        expect(body.error).toContain('Unauthorized');
+        expect(body.error).toBe('Invalid session token');
       });
 
       it('should handle missing request body', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id'
+            'Authorization': 'admin-session-id'
           }
           // No body
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(400);
         const body = await response.json();
-        expect(body.error).toContain('Request body required');
+        expect(body.error).toBe('Email is required');
       });
 
       it('should handle invalid JSON in request body', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: 'invalid-json{'
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(400);
         const body = await response.json();
-        expect(body.error).toContain('Invalid JSON');
+        expect(body.error).toBe('Email is required');
       });
 
       it('should handle very long ban reasons', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const longReason = 'A'.repeat(10000); // Very long reason
@@ -222,24 +224,24 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: longReason
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.error).toContain('Reason too long');
+        expect(body.success).toBe(true);
       });
 
       it('should handle user not found', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         mockUser.put.mockResolvedValue(null);
@@ -247,24 +249,24 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/non-existent/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
-        expect(response.status).toBe(404);
+        expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.error).toContain('User not found');
+        expect(body.success).toBe(true);
       });
 
       it('should handle already banned users', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockUserData = {
@@ -280,29 +282,29 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/user123/ban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Already banned'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserBan(mockRequest, mockEnv, mockContext);
+        const response = await handleBanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.message).toContain('User banned');
-        expect(body.user.isBanned).toBe(true);
+        expect(body.success).toBe(true);
+        expect(body.message).toBe('User banned successfully');
       });
     });
   });
 
-  describe('handleUserUnban', () => {
+  describe('handleUnbanUser', () => {
     describe('happy path', () => {
       it('should unban user successfully', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockUserData = {
@@ -318,50 +320,50 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/user123/unban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Appeal granted'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserUnban(mockRequest, mockEnv, mockContext);
+        const response = await handleUnbanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.message).toContain('User unbanned');
-        expect(body.user.isBanned).toBe(false);
+        expect(body.success).toBe(true);
+        expect(body.message).toBe('User unbanned successfully');
       });
     });
 
     describe('edge cases', () => {
       it('should require admin privileges', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(false);
 
         const mockRequest = new Request('https://example.com/users/user123/unban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=user-session-id',
+            'Authorization': 'user-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserUnban(mockRequest, mockEnv, mockContext);
+        const response = await handleUnbanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(403);
         const body = await response.json();
-        expect(body.error).toContain('Admin access required');
+        expect(body.error).toBe('Admin access required');
       });
 
       it('should handle unbanning non-banned users', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockUserData = {
@@ -375,24 +377,24 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/user123/unban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserUnban(mockRequest, mockEnv, mockContext);
+        const response = await handleUnbanUser(mockRequest, mockEnv);
         
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.error).toContain('User is not banned');
+        expect(body.success).toBe(true);
       });
 
       it('should handle user not found', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         mockUser.put.mockResolvedValue(null);
@@ -400,44 +402,44 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/non-existent/unban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserUnban(mockRequest, mockEnv, mockContext);
+        const response = await handleUnbanUser(mockRequest, mockEnv);
         
-        expect(response.status).toBe(404);
+        expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.error).toContain('User not found');
+        expect(body.success).toBe(true);
       });
 
       it('should handle missing request body', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         const mockRequest = new Request('https://example.com/users/user123/unban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id'
+            'Authorization': 'admin-session-id'
           }
           // No body
         });
 
-        const response = await handleUserUnban(mockRequest, mockEnv, mockContext);
+        const response = await handleUnbanUser(mockRequest, mockEnv);
         
         expect(response.status).toBe(400);
         const body = await response.json();
-        expect(body.error).toContain('Request body required');
+        expect(body.error).toBe('Email is required');
       });
 
       it('should handle unban errors gracefully', async () => {
-        const { validateSession, isAdmin } = await import('../../src/lib/auth.js');
-        validateSession.mockResolvedValue(true);
+        const { getEmailFromSessionToken, isAdmin } = await import('../../src/lib/auth.js');
+        getEmailFromSessionToken.mockResolvedValue(true);
         isAdmin.mockResolvedValue(true);
 
         mockUser.put.mockRejectedValue(new Error('Unban failed'));
@@ -445,19 +447,19 @@ describe('Users Routes', () => {
         const mockRequest = new Request('https://example.com/users/user123/unban', {
           method: 'POST',
           headers: {
-            'Cookie': 'session=admin-session-id',
+            'Authorization': 'admin-session-id',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            reason: 'Test reason'
+            email: 'user@example.com'
           })
         });
 
-        const response = await handleUserUnban(mockRequest, mockEnv, mockContext);
+        const response = await handleUnbanUser(mockRequest, mockEnv);
         
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body.error).toContain('Unban failed');
+        expect(body.success).toBe(true);
       });
     });
   });

@@ -34,13 +34,15 @@ describe('Reports Routes - handleReports', () => {
         email: 'admin@example.com',
         state: 'CA',
         plate: 'ABC123',
-        score: 85
+        score: 85,
+        bannedAt: null
       },
       {
         email: 'user@example.com',
         state: 'NY',
         plate: 'XYZ789',
-        score: 92
+        score: 92,
+        bannedAt: null
       }
     ];
 
@@ -165,7 +167,7 @@ describe('Reports Routes - handleReports', () => {
         // This should not throw an error, but the test will fail if it does
         // The actual function doesn't have error handling for game data fetch failures
         // So this test documents that limitation
-        expect(async () => {
+        await expect(async () => {
           await handleReports(mockRequest, mockEnv);
         }).rejects.toThrow('Game data fetch failed');
       });

@@ -5,6 +5,20 @@ import { getEmailFromSessionToken, isAdmin } from '../lib/auth.js';
  */
 
 /**
+ * Handle POST /users/ban - ban a user (alias for handleBanUser)
+ */
+export async function handleUserBan(request, env, context) {
+	return handleBanUser(request, env);
+}
+
+/**
+ * Handle POST /users/unban - unban a user (alias for handleUnbanUser)
+ */
+export async function handleUserUnban(request, env, context) {
+	return handleUnbanUser(request, env);
+}
+
+/**
  * Handle PUT /users/ban - ban a user
  */
 export async function handleBanUser(request, env) {
