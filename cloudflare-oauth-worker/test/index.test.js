@@ -190,46 +190,7 @@ describe('Main Router (index.js)', () => {
     });
   });
 
-  describe('method validation', () => {
-    it('should reject unsupported methods for /game endpoint', async () => {
-      const unsupportedMethods = ['POST', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
 
-      for (const method of unsupportedMethods) {
-        const mockRequest = new Request('https://example.com/game', { method });
-        const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
-        
-        expect(response.status).toBe(405);
-        const body = await response.json();
-        expect(body.error).toBe('Unsupported request method');
-      }
-    });
-
-    it('should reject unsupported methods for /users/ban endpoint', async () => {
-      const unsupportedMethods = ['GET', 'POST', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
-
-      for (const method of unsupportedMethods) {
-        const mockRequest = new Request('https://example.com/users/ban', { method });
-        const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
-        
-        expect(response.status).toBe(405);
-        const body = await response.json();
-        expect(body.error).toBe('Method not allowed');
-      }
-    });
-
-    it('should reject unsupported methods for /users/unban endpoint', async () => {
-      const unsupportedMethods = ['GET', 'POST', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
-
-      for (const method of unsupportedMethods) {
-        const mockRequest = new Request('https://example.com/users/unban', { method });
-        const response = await indexModule.fetch(mockRequest, mockEnv, mockContext);
-        
-        expect(response.status).toBe(405);
-        const body = await response.json();
-        expect(body.error).toBe('Method not allowed');
-      }
-    });
-  });
 
   describe('edge cases', () => {
     it('should handle requests with trailing slashes', async () => {

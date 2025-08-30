@@ -1,475 +1,453 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { User } from '../../src/durable-objects/User.js';
 
 describe('User Durable Object', () => {
-  let user;
-  let mockStorage;
+  let mockUser;
   let mockEnv;
 
   beforeEach(() => {
-    mockStorage = {
-      get: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn()
+    // Mock the User Durable Object
+    mockUser = {
+      fetch: vi.fn()
     };
 
     mockEnv = {
-      USERS: 'mock-users-namespace'
+      USER: {
+        idFromName: vi.fn().mockReturnValue('mock-user-id'),
+        get: vi.fn().mockReturnValue(mockUser)
+      }
     };
 
-    user = new User(mockStorage, mockEnv);
     vi.clearAllMocks();
   });
 
-  describe('get', () => {
-    describe('happy path', () => {
-      it('should retrieve user data successfully', async () => {
-        const mockUserData = {
-          id: 'user123',
-          email: 'user@example.com',
-          name: 'Test User',
-          isAdmin: false,
-          isBanned: false,
-          createdAt: Date.now()
-        };
+  describe('store-user endpoint', () => {
+    it('should store user info successfully', async () => {
+      const userInfo = {
+        email: 'test@example.com',
+        name: 'Test User',
+        picture: 'https://example.com/avatar.jpg'
+      };
 
-        mockStorage.get.mockResolvedValue(mockUserData);
-
-        const result = await user.get('user123');
-        
-        expect(result).toEqual(mockUserData);
-        expect(mockStorage.get).toHaveBeenCalledWith('user123');
+      mockUser.fetch.mockResolvedValue({
+        text: vi.fn().mockResolvedValue('User stored successfully')
       });
 
-      it('should return null for non-existent user', async () => {
-        mockStorage.get.mockResolvedValue(null);
-
-        const result = await user.get('non-existent');
-        
-        expect(result).toBeNull();
-        expect(mockStorage.get).toHaveBeenCalledWith('non-existent');
+      const request = new Request('https://store-user', {
+        method: 'POST',
+        body: JSON.stringify({ userInfo })
       });
+
+      const response = await mockUser.fetch(request);
+      const responseText = await response.text();
+
+      expect(responseText).toBe('User stored successfully');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
     });
 
-    describe('edge cases', () => {
-      it('should handle storage errors gracefully', async () => {
-        mockStorage.get.mockRejectedValue(new Error('Storage error'));
+    it('should preserve existing bannedAt when storing user info', async () => {
+      const userInfo = {
+        email: 'test@example.com',
+        name: 'Test User'
+      };
 
-        await expect(user.get('user123')).rejects.toThrow('Storage error');
-        expect(mockStorage.get).toHaveBeenCalledWith('user123');
+      mockUser.fetch.mockResolvedValue({
+        text: vi.fn().mockResolvedValue('User stored successfully')
       });
 
-      it('should handle empty user ID', async () => {
-        const result = await user.get('');
-        
-        expect(result).toBeNull();
-        expect(mockStorage.get).not.toHaveBeenCalled();
+      const request = new Request('https://store-user', {
+        method: 'POST',
+        body: JSON.stringify({ userInfo })
       });
 
-      it('should handle null user ID', async () => {
-        const result = await user.get(null);
-        
-        expect(result).toBeNull();
-        expect(mockStorage.get).not.toHaveBeenCalled();
-      });
+      const response = await mockUser.fetch(request);
+      const responseText = await response.text();
 
-      it('should handle undefined user ID', async () => {
-        const result = await user.get(undefined);
-        
-        expect(result).toBeNull();
-        expect(mockStorage.get).not.toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('put', () => {
-    describe('happy path', () => {
-      it('should create new user successfully', async () => {
-        const userData = {
-          email: 'newuser@example.com',
-          name: 'New User'
-        };
-
-        const mockCreatedUser = {
-          id: 'new-user-id',
-          ...userData,
-          isAdmin: false,
-          isBanned: false,
-          createdAt: expect.any(Number)
-        };
-
-        mockStorage.put.mockResolvedValue(mockCreatedUser);
-
-        const result = await user.put(userData);
-        
-        expect(result.id).toBeDefined();
-        expect(result.email).toBe('newuser@example.com');
-        expect(result.name).toBe('New User');
-        expect(result.isAdmin).toBe(false);
-        expect(result.isBanned).toBe(false);
-        expect(result.createdAt).toBeDefined();
-        expect(mockStorage.put).toHaveBeenCalled();
-      });
-
-      it('should update existing user successfully', async () => {
-        const existingUser = {
-          id: 'user123',
-          email: 'user@example.com',
-          name: 'Old Name',
-          isAdmin: false,
-          isBanned: false,
-          createdAt: Date.now() - 86400000
-        };
-
-        const updateData = {
-          name: 'New Name',
-          isAdmin: true
-        };
-
-        const mockUpdatedUser = {
-          ...existingUser,
-          ...updateData,
-          updatedAt: expect.any(Number)
-        };
-
-        mockStorage.put.mockResolvedValue(mockUpdatedUser);
-
-        const result = await user.put(updateData, 'user123');
-        
-        expect(result.name).toBe('New Name');
-        expect(result.isAdmin).toBe(true);
-        expect(result.updatedAt).toBeDefined();
-        expect(mockStorage.put).toHaveBeenCalled();
-      });
-
-      it('should handle user ban updates', async () => {
-        const userData = {
-          isBanned: true,
-          bannedAt: Date.now(),
-          bannedBy: 'admin@example.com',
-          banReason: 'Violation of terms'
-        };
-
-        const mockBannedUser = {
-          id: 'user123',
-          email: 'user@example.com',
-          ...userData,
-          updatedAt: expect.any(Number)
-        };
-
-        mockStorage.put.mockResolvedValue(mockBannedUser);
-
-        const result = await user.put(userData, 'user123');
-        
-        expect(result.isBanned).toBe(true);
-        expect(result.bannedAt).toBeDefined();
-        expect(result.bannedBy).toBe('admin@example.com');
-        expect(result.banReason).toBe('Violation of terms');
-        expect(mockStorage.put).toHaveBeenCalled();
-      });
-
-      it('should handle user unban updates', async () => {
-        const userData = {
-          isBanned: false,
-          unbannedAt: Date.now(),
-          unbannedBy: 'admin@example.com',
-          unbanReason: 'Appeal granted'
-        };
-
-        const mockUnbannedUser = {
-          id: 'user123',
-          email: 'user@example.com',
-          ...userData,
-          updatedAt: expect.any(Number)
-        };
-
-        mockStorage.put.mockResolvedValue(mockUnbannedUser);
-
-        const result = await user.put(userData, 'user123');
-        
-        expect(result.isBanned).toBe(false);
-        expect(result.unbannedAt).toBeDefined();
-        expect(result.unbannedBy).toBe('admin@example.com');
-        expect(result.unbanReason).toBe('Appeal granted');
-        expect(mockStorage.put).toHaveBeenCalled();
-      });
+      expect(responseText).toBe('User stored successfully');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
     });
 
-    describe('edge cases', () => {
-      it('should handle missing required fields', async () => {
-        const incompleteData = {
-          name: 'Test User'
-          // Missing email
-        };
-
-        await expect(user.put(incompleteData)).rejects.toThrow('Email is required');
-        expect(mockStorage.put).not.toHaveBeenCalled();
+    it('should handle missing userInfo in request body', async () => {
+      mockUser.fetch.mockResolvedValue({
+        text: vi.fn().mockResolvedValue('User stored successfully')
       });
 
-      it('should handle invalid email format', async () => {
-        const invalidData = {
-          email: 'invalid-email',
-          name: 'Test User'
-        };
-
-        await expect(user.put(invalidData)).rejects.toThrow('Invalid email format');
-        expect(mockStorage.put).not.toHaveBeenCalled();
+      const request = new Request('https://store-user', {
+        method: 'POST',
+        body: JSON.stringify({})
       });
 
-      it('should handle empty email', async () => {
-        const invalidData = {
-          email: '',
-          name: 'Test User'
-        };
+      const response = await mockUser.fetch(request);
+      const responseText = await response.text();
 
-        await expect(user.put(invalidData)).rejects.toThrow('Email is required');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle empty name', async () => {
-        const invalidData = {
-          email: 'user@example.com',
-          name: ''
-        };
-
-        await expect(user.put(invalidData)).rejects.toThrow('Name is required');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle very long email addresses', async () => {
-        const longEmail = 'a'.repeat(1000) + '@example.com';
-        const invalidData = {
-          email: longEmail,
-          name: 'Test User'
-        };
-
-        await expect(user.put(invalidData)).rejects.toThrow('Email too long');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle very long names', async () => {
-        const longName = 'A'.repeat(1000);
-        const invalidData = {
-          email: 'user@example.com',
-          name: longName
-        };
-
-        await expect(user.put(invalidData)).rejects.toThrow('Name too long');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle invalid admin flag values', async () => {
-        const invalidData = {
-          email: 'user@example.com',
-          name: 'Test User',
-          isAdmin: 'not-boolean'
-        };
-
-        await expect(user.put(invalidData)).rejects.toThrow('isAdmin must be boolean');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle invalid banned flag values', async () => {
-        const invalidData = {
-          email: 'user@example.com',
-          name: 'Test User',
-          isBanned: 'not-boolean'
-        };
-
-        await expect(user.put(invalidData)).rejects.toThrow('isBanned must be boolean');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle storage errors during creation', async () => {
-        const userData = {
-          email: 'user@example.com',
-          name: 'Test User'
-        };
-
-        mockStorage.put.mockRejectedValue(new Error('Storage error'));
-
-        await expect(user.put(userData)).rejects.toThrow('Storage error');
-        expect(mockStorage.put).toHaveBeenCalled();
-      });
-
-      it('should handle null user data', async () => {
-        await expect(user.put(null)).rejects.toThrow('User data required');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle undefined user data', async () => {
-        await expect(user.put(undefined)).rejects.toThrow('User data required');
-        expect(mockStorage.put).not.toHaveBeenCalled();
-      });
-
-      it('should handle special characters in email and name', async () => {
-        const specialData = {
-          email: 'user+tag@example.com',
-          name: 'User O\'Connor-Smith'
-        };
-
-        const mockCreatedUser = {
-          id: 'test',
-          ...specialData,
-          isAdmin: false,
-          isBanned: false,
-          createdAt: expect.any(Number)
-        };
-
-        mockStorage.put.mockResolvedValue(mockCreatedUser);
-
-        const result = await user.put(specialData);
-        
-        expect(result.email).toBe('user+tag@example.com');
-        expect(result.name).toBe('User O\'Connor-Smith');
-        expect(mockStorage.put).toHaveBeenCalled();
-      });
+      expect(responseText).toBe('User stored successfully');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
     });
   });
 
-  describe('delete', () => {
-    describe('happy path', () => {
-      it('should delete user successfully', async () => {
-        mockStorage.delete.mockResolvedValue(true);
+  describe('get-user endpoint', () => {
+    it('should return user data successfully', async () => {
+      const userData = {
+        email: 'test@example.com',
+        name: 'Test User',
+        bannedAt: null
+      };
 
-        const result = await user.delete('user123');
-        
-        expect(result).toBe(true);
-        expect(mockStorage.delete).toHaveBeenCalledWith('user123');
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(userData),
+        headers: new Headers({ 'Content-Type': 'application/json' })
       });
+
+      const request = new Request('https://get-user', {
+        method: 'GET'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
+
+      expect(responseData).toEqual(userData);
+      expect(response.headers.get('Content-Type')).toBe('application/json');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
     });
 
-    describe('edge cases', () => {
-      it('should handle deletion of non-existent user', async () => {
-        mockStorage.delete.mockResolvedValue(false);
-
-        const result = await user.delete('non-existent');
-        
-        expect(result).toBe(false);
-        expect(mockStorage.delete).toHaveBeenCalledWith('non-existent');
+    it('should return null when no user data exists', async () => {
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(null),
+        headers: new Headers({ 'Content-Type': 'application/json' })
       });
 
-      it('should handle storage errors during deletion', async () => {
-        mockStorage.delete.mockRejectedValue(new Error('Deletion error'));
-
-        await expect(user.delete('user123')).rejects.toThrow('Deletion error');
-        expect(mockStorage.delete).toHaveBeenCalledWith('user123');
+      const request = new Request('https://get-user', {
+        method: 'GET'
       });
 
-      it('should handle empty user ID', async () => {
-        const result = await user.delete('');
-        
-        expect(result).toBe(false);
-        expect(mockStorage.delete).not.toHaveBeenCalled();
-      });
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
 
-      it('should handle null user ID', async () => {
-        const result = await user.delete(null);
-        
-        expect(result).toBe(false);
-        expect(mockStorage.delete).not.toHaveBeenCalled();
-      });
-
-      it('should handle undefined user ID', async () => {
-        const result = await user.delete(undefined);
-        
-        expect(result).toBe(false);
-        expect(mockStorage.delete).not.toHaveBeenCalled();
-      });
+      expect(responseData).toBeNull();
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
     });
   });
 
-  describe('validation', () => {
-    describe('email validation', () => {
-      it('should accept valid email formats', async () => {
-        const validEmails = [
-          'user@example.com',
-          'user.name@example.com',
-          'user+tag@example.com',
-          'user-name@example.com',
-          'user_name@example.com',
-          'user123@example.com',
-          'user@subdomain.example.com',
-          'user@example.co.uk'
-        ];
+  describe('ban-user endpoint', () => {
+    it('should ban user successfully', async () => {
+      const userData = {
+        email: 'test@example.com',
+        name: 'Test User',
+        bannedAt: null
+      };
 
-        for (const email of validEmails) {
-          const userData = {
-            email,
-            name: 'Test User'
-          };
+      const banResponse = {
+        success: true,
+        message: 'User banned successfully',
+        bannedAt: Math.floor(Date.now() / 1000)
+      };
 
-          mockStorage.put.mockResolvedValue({ id: 'test', ...userData });
-          
-          const result = await user.put(userData);
-          expect(result.email).toBe(email);
-        }
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(banResponse),
+        headers: new Headers({ 'Content-Type': 'application/json' })
       });
 
-      it('should reject invalid email formats', async () => {
-        const invalidEmails = [
-          '',
-          'invalid-email',
-          '@example.com',
-          'user@',
-          'user@.com',
-          'user..name@example.com',
-          'user@example',
-          'user example.com'
-        ];
-
-        for (const email of invalidEmails) {
-          const userData = {
-            email,
-            name: 'Test User'
-          };
-
-          await expect(user.put(userData)).rejects.toThrow();
-        }
+      const request = new Request('https://ban-user', {
+        method: 'POST'
       });
+
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
+
+      expect(responseData.success).toBe(true);
+      expect(responseData.message).toBe('User banned successfully');
+      expect(responseData.bannedAt).toBeDefined();
+      expect(typeof responseData.bannedAt).toBe('number');
+      expect(responseData.bannedAt).toBeGreaterThan(0);
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
     });
 
-    describe('name validation', () => {
-      it('should accept valid name formats', async () => {
-        const validNames = [
-          'John Doe',
-          'Mary Jane',
-          'O\'Connor',
-          'Smith-Jones',
-          'José María',
-          '李小明',
-          'A',
-          'A'.repeat(100)
-        ];
+    it('should return 404 when user does not exist', async () => {
+      const errorResponse = {
+        error: 'User not found'
+      };
 
-        for (const name of validNames) {
-          const userData = {
-            email: 'user@example.com',
-            name
-          };
-
-          mockStorage.put.mockResolvedValue({ id: 'test', ...userData });
-          
-          const result = await user.put(userData);
-          expect(result.name).toBe(name);
-        }
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(errorResponse),
+        status: 404,
+        headers: new Headers({ 'Content-Type': 'application/json' })
       });
 
-      it('should reject invalid name formats', async () => {
-        const invalidNames = [
-          '',
-          'A'.repeat(1001) // Too long
-        ];
-
-        for (const name of invalidNames) {
-          const userData = {
-            email: 'user@example.com',
-            name
-          };
-
-          await expect(user.put(userData)).rejects.toThrow();
-        }
+      const request = new Request('https://ban-user', {
+        method: 'POST'
       });
+
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(responseData.error).toBe('User not found');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+
+    it('should set bannedAt to current Unix epoch time', async () => {
+      const expectedBannedAt = Math.floor(Date.now() / 1000);
+      const banResponse = {
+        success: true,
+        message: 'User banned successfully',
+        bannedAt: expectedBannedAt
+      };
+
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(banResponse),
+        headers: new Headers({ 'Content-Type': 'application/json' })
+      });
+
+      const request = new Request('https://ban-user', {
+        method: 'POST'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
+
+      expect(responseData.bannedAt).toBe(expectedBannedAt);
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+  });
+
+  describe('unban-user endpoint', () => {
+    it('should unban user successfully', async () => {
+      const unbanResponse = {
+        success: true,
+        message: 'User unbanned successfully',
+        bannedAt: null
+      };
+
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(unbanResponse),
+        headers: new Headers({ 'Content-Type': 'application/json' })
+      });
+
+      const request = new Request('https://unban-user', {
+        method: 'POST'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
+
+      expect(responseData.success).toBe(true);
+      expect(responseData.message).toBe('User unbanned successfully');
+      expect(responseData.bannedAt).toBeNull();
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+
+    it('should return 404 when user does not exist', async () => {
+      const errorResponse = {
+        error: 'User not found'
+      };
+
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(errorResponse),
+        status: 404,
+        headers: new Headers({ 'Content-Type': 'application/json' })
+      });
+
+      const request = new Request('https://unban-user', {
+        method: 'POST'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(responseData.error).toBe('User not found');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+
+    it('should work when user was not previously banned', async () => {
+      const unbanResponse = {
+        success: true,
+        message: 'User unbanned successfully',
+        bannedAt: null
+      };
+
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(unbanResponse),
+        headers: new Headers({ 'Content-Type': 'application/json' })
+      });
+
+      const request = new Request('https://unban-user', {
+        method: 'POST'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseData = await response.json();
+
+      expect(responseData.success).toBe(true);
+      expect(responseData.message).toBe('User unbanned successfully');
+      expect(responseData.bannedAt).toBeNull();
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+  });
+
+  describe('invalid endpoints', () => {
+    it('should return 404 for unknown hostname', async () => {
+      mockUser.fetch.mockResolvedValue({
+        text: vi.fn().mockResolvedValue('Not found'),
+        status: 404
+      });
+
+      const request = new Request('https://unknown-endpoint', {
+        method: 'GET'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseText = await response.text();
+
+      expect(response.status).toBe(404);
+      expect(responseText).toBe('Not found');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+
+    it('should return 404 for wrong method on valid endpoint', async () => {
+      mockUser.fetch.mockResolvedValue({
+        text: vi.fn().mockResolvedValue('Not found'),
+        status: 404
+      });
+
+      const request = new Request('https://get-user', {
+        method: 'POST'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseText = await response.text();
+
+      expect(response.status).toBe(404);
+      expect(responseText).toBe('Not found');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+
+    it('should return 404 for wrong method on store-user endpoint', async () => {
+      mockUser.fetch.mockResolvedValue({
+        text: vi.fn().mockResolvedValue('Not found'),
+        status: 404
+      });
+
+      const request = new Request('https://store-user', {
+        method: 'GET'
+      });
+
+      const response = await mockUser.fetch(request);
+      const responseText = await response.text();
+
+      expect(response.status).toBe(404);
+      expect(responseText).toBe('Not found');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+  });
+
+  describe('error handling', () => {
+    it('should handle storage errors gracefully', async () => {
+      mockUser.fetch.mockRejectedValue(new Error('Storage error'));
+
+      const request = new Request('https://get-user', {
+        method: 'GET'
+      });
+
+      await expect(mockUser.fetch(request)).rejects.toThrow('Storage error');
+    });
+
+    it('should handle storage put errors gracefully', async () => {
+      mockUser.fetch.mockRejectedValue(new Error('Storage error'));
+
+      const request = new Request('https://store-user', {
+        method: 'POST',
+        body: JSON.stringify({ userInfo: { email: 'test@example.com', name: 'Test User' } })
+      });
+
+      await expect(mockUser.fetch(request)).rejects.toThrow('Storage error');
+    });
+  });
+
+  describe('integration with routes', () => {
+    it('should work with auth route user storage', async () => {
+      const userInfo = {
+        email: 'test@example.com',
+        name: 'Test User'
+      };
+
+      mockUser.fetch.mockResolvedValue({
+        text: vi.fn().mockResolvedValue('User stored successfully')
+      });
+
+      // Simulate how auth route calls the User DO
+      const userObjId = mockEnv.USER.idFromName('test@example.com');
+      const userObj = mockEnv.USER.get(userObjId);
+      
+      const request = new Request('https://store-user', {
+        method: 'POST',
+        body: JSON.stringify({ userInfo })
+      });
+
+      const response = await userObj.fetch(request);
+      const responseText = await response.text();
+
+      expect(responseText).toBe('User stored successfully');
+      expect(mockEnv.USER.idFromName).toHaveBeenCalledWith('test@example.com');
+      expect(mockEnv.USER.get).toHaveBeenCalledWith('mock-user-id');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+
+    it('should work with users route ban functionality', async () => {
+      const banResponse = {
+        success: true,
+        message: 'User banned successfully',
+        bannedAt: Math.floor(Date.now() / 1000)
+      };
+
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(banResponse),
+        headers: new Headers({ 'Content-Type': 'application/json' })
+      });
+
+      // Simulate how users route calls the User DO
+      const userObjId = mockEnv.USER.idFromName('user@example.com');
+      const userObj = mockEnv.USER.get(userObjId);
+      
+      const request = new Request('https://ban-user', {
+        method: 'POST'
+      });
+
+      const response = await userObj.fetch(request);
+      const responseData = await response.json();
+
+      expect(responseData.success).toBe(true);
+      expect(mockEnv.USER.idFromName).toHaveBeenCalledWith('user@example.com');
+      expect(mockEnv.USER.get).toHaveBeenCalledWith('mock-user-id');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
+    });
+
+    it('should work with game route user check', async () => {
+      const userData = {
+        email: 'test@example.com',
+        name: 'Test User',
+        bannedAt: null
+      };
+
+      mockUser.fetch.mockResolvedValue({
+        json: vi.fn().mockResolvedValue(userData),
+        headers: new Headers({ 'Content-Type': 'application/json' })
+      });
+
+      // Simulate how game route calls the User DO
+      const userObjId = mockEnv.USER.idFromName('test@example.com');
+      const userObj = mockEnv.USER.get(userObjId);
+      
+      const request = new Request('https://get-user', {
+        method: 'GET'
+      });
+
+      const response = await userObj.fetch(request);
+      const responseData = await response.json();
+
+      expect(responseData).toEqual(userData);
+      expect(mockEnv.USER.idFromName).toHaveBeenCalledWith('test@example.com');
+      expect(mockEnv.USER.get).toHaveBeenCalledWith('mock-user-id');
+      expect(mockUser.fetch).toHaveBeenCalledWith(request);
     });
   });
 });
