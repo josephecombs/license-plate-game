@@ -22,7 +22,6 @@ export class User extends DurableObject {
 				...data.userInfo,
 				bannedAt: existingBannedAt || null
 			};
-			
 			await this.ctx.storage.put('user', userInfo);
 			return new Response('User stored successfully');
 		} else if (url.hostname === 'get-user' && request.method === 'GET') {
