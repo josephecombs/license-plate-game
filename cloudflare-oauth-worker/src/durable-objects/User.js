@@ -12,11 +12,17 @@ export class User extends DurableObject {
 		const url = new URL(request.url);
 		if (url.hostname === 'store-user' && request.method === 'POST') {
 			const data = await request.json();
-			// Initialize user with bannedAt set to null by default
+			
+			// Get existing user data to preserve bannedAt if already set
+			const existingUserData = await this.ctx.storage.get('user');
+			const existingBannedAt = existingUserData?.bannedAt;
+			
+			// Initialize user with existing bannedAt value or null if new user
 			const userInfo = {
 				...data.userInfo,
-				bannedAt: null
+				bannedAt: existingBannedAt || null
 			};
+			
 			await this.ctx.storage.put('user', userInfo);
 			return new Response('User stored successfully');
 		} else if (url.hostname === 'get-user' && request.method === 'GET') {
