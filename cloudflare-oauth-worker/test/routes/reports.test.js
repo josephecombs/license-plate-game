@@ -15,6 +15,7 @@ vi.mock('../../src/lib/utils.js', () => ({
 describe('Reports Routes - handleReports', () => {
   let mockEnv;
   let mockGameObj;
+  let mockUserObj;
   let mockGameData;
 
   beforeEach(() => {
@@ -22,10 +23,18 @@ describe('Reports Routes - handleReports', () => {
       GAME: {
         idFromName: vi.fn(),
         get: vi.fn()
+      },
+      USER: {
+        idFromName: vi.fn(),
+        get: vi.fn()
       }
     };
 
     mockGameObj = {
+      fetch: vi.fn()
+    };
+
+    mockUserObj = {
       fetch: vi.fn()
     };
 
@@ -64,6 +73,13 @@ describe('Reports Routes - handleReports', () => {
         mockEnv.GAME.get.mockReturnValue(mockGameObj);
         mockGameObj.fetch.mockResolvedValue({
           json: () => Promise.resolve(mockGameData)
+        });
+
+        // Mock USER environment for ban status fetching
+        mockEnv.USER.idFromName.mockReturnValue('user-id');
+        mockEnv.USER.get.mockReturnValue(mockUserObj);
+        mockUserObj.fetch.mockResolvedValue({
+          json: () => Promise.resolve({ bannedAt: null })
         });
 
         const mockRequest = new Request('https://example.com/reports', {
