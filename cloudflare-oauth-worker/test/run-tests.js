@@ -83,7 +83,8 @@ async function runAllTests() {
       'lib',
       'routes', 
       'durable-objects',
-      'index'
+      'index',
+      'deploy-safety'
     ];
     
     categories.forEach(category => {
