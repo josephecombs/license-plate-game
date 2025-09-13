@@ -9,9 +9,14 @@ import BannedUserModal from './components/BannedUserModal';
 import './App.css';
 import Cookies from 'js-cookie';
 
-export const API_BASE_URL = process.env.NODE_ENV === 'production' 
+export const API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://api.platechase.com'
   : 'http://localhost:8787';
+
+// Get current month-year string for game data organization (matches server logic)
+export const getCurrentMonthYear = () => {
+  return new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+};
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -222,6 +227,7 @@ function AppContent() {
               user={user} 
               visitedStates={visitedStates} 
               setVisitedStates={setVisitedStates}
+              gameKey={gameKey}
               onBannedUser={(banData) => {
                 setBanData(banData);
                 setShowBannedModal(true);

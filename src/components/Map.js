@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
-import { API_BASE_URL } from '../App';
+import { API_BASE_URL, getCurrentMonthYear } from '../App';
 import Cookies from 'js-cookie';
 import StateToggleList from './StateToggleList';
 import LoginModal from './LoginModal';
+import NewMonthModal from './NewMonthModal';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-const Map = ({ user, visitedStates, setVisitedStates, onBannedUser }) => {
+const Map = ({ user, visitedStates, setVisitedStates, gameKey, onBannedUser }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showNewMonthModal, setShowNewMonthModal] = useState(false);
+  const [pendingStateChange, setPendingStateChange] = useState(null);
 
 
   useEffect(() => {
@@ -21,6 +24,23 @@ const Map = ({ user, visitedStates, setVisitedStates, onBannedUser }) => {
     if (!user) {
       setShowLoginModal(true);
       return;
+    }
+
+    // Check for gameKey mismatch before making changes
+    const currentMonthYear = getCurrentMonthYear();
+    if ((gameKey && gameKey !== currentMonthYear)) {
+      console.warn(`🚨 GAME KEY MISMATCH DETECTED!`, {
+        storedGameKey: gameKey,
+        currentMonthYear: currentMonthYear,
+        action: 'state_click',
+        stateId: stateId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Store the pending state change and show the modal
+      setPendingStateChange(stateId);
+      setShowNewMonthModal(true);
+      return; // Don't proceed with the state change yet
     }
 
     setLastClickedState(stateId);
@@ -84,6 +104,65 @@ const Map = ({ user, visitedStates, setVisitedStates, onBannedUser }) => {
     return ((visitedStates.length / 50) * 100).toFixed(2);
   };
 
+  // Handle new month modal actions
+  const handleNewMonthConfirm = () => {
+    // Clear game state and localStorage
+    setVisitedStates([]);
+    localStorage.removeItem('visitedStates');
+    localStorage.removeItem('gameKey');
+    
+    // Close modal and clear pending state
+    setShowNewMonthModal(false);
+    setPendingStateChange(null);
+    
+    // If there was a pending state change, apply it now
+    if (pendingStateChange) {
+      const newVisitedStates = [pendingStateChange];
+      setVisitedStates(newVisitedStates);
+      localStorage.setItem('visitedStates', JSON.stringify(newVisitedStates));
+      
+      // Send to server
+      sendStateToServer(newVisitedStates);
+    }
+  };
+
+  const handleNewMonthCancel = () => {
+    // Just close the modal without clearing anything
+    setShowNewMonthModal(false);
+    setPendingStateChange(null);
+  };
+
+  // Helper function to send state to server
+  const sendStateToServer = async (newVisitedStates) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/game`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': Cookies.get('session')
+        },
+        body: JSON.stringify({
+          visitedStates: newVisitedStates,
+          progress: ((newVisitedStates.length / 50) * 100).toFixed(2)
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 403 && errorData.error === 'Account banned') {
+          if (onBannedUser) {
+            onBannedUser(errorData);
+          }
+          return;
+        } else {
+          console.error('Failed to save game state:', errorData);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save game state:', error);
+    }
+  };
+
   return (
     <div className="map-container">
       <div className="header-content">
@@ -142,12 +221,19 @@ const Map = ({ user, visitedStates, setVisitedStates, onBannedUser }) => {
       <StateToggleList 
         visitedStates={visitedStates} 
         onStateClick={handleStateClickWithLogin}
+        gameKey={gameKey}
       />
       <LoginModal 
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
       />
-
+      <NewMonthModal 
+        isOpen={showNewMonthModal}
+        onClose={handleNewMonthCancel}
+        onConfirm={handleNewMonthConfirm}
+        previousMonth={gameKey}
+        currentMonth={getCurrentMonthYear()}
+      />
     </div>
   );
 };

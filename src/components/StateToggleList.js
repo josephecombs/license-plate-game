@@ -55,7 +55,7 @@ const US_STATES = [
 ];
 
 // onStateClick handles login logic and toggling
-const StateToggleList = ({ visitedStates, onStateClick }) => {
+const StateToggleList = ({ visitedStates, onStateClick, gameKey }) => {
   return (
     <div className="state-toggle-list">
       <h2>State List</h2>
