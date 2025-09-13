@@ -86,7 +86,10 @@ describe('Game Routes', () => {
         
         expect(response.status).toBe(200);
         const body = await response.json();
-        expect(body).toEqual(mockGameData);
+        expect(body).toEqual({
+          ...mockGameData,
+          gameKey: '2024-01'
+        });
       });
     });
 

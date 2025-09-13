@@ -24,6 +24,10 @@ function AppContent() {
     const saved = localStorage.getItem('visitedStates');
     return saved ? JSON.parse(saved) : [];
   });
+  const [gameKey, setGameKey] = useState(() => {
+    const saved = localStorage.getItem('gameKey');
+    return saved || null;
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const [showTooltip, setShowTooltip] = useState(false);
@@ -114,6 +118,12 @@ function AppContent() {
           const serverVisitedStates = data.visitedStates ?? [];
           setVisitedStates(serverVisitedStates);
           localStorage.setItem('visitedStates', JSON.stringify(serverVisitedStates));
+        }
+        
+        // Store gameKey if it exists in the response
+        if (data.gameKey !== undefined) {
+          setGameKey(data.gameKey);
+          localStorage.setItem('gameKey', data.gameKey);
         }
       })
       .catch(error => console.error('Error fetching game state:', error));

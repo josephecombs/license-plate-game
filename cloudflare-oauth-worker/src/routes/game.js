@@ -60,7 +60,14 @@ export async function handleGetGame(request, env) {
 
 	const gameData = await gameResponse.json();
 	console.log('🎮 GET /game - Retrieved data:', gameData);
-	return new Response(JSON.stringify(gameData), { headers: { 'Content-Type': 'application/json' } });
+	
+	// Include the game key in the response
+	const responseData = {
+		...gameData,
+		gameKey: currentMonthYear
+	};
+	
+	return new Response(JSON.stringify(responseData), { headers: { 'Content-Type': 'application/json' } });
 }
 
 /**

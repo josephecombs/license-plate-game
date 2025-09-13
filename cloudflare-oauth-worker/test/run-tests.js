@@ -81,7 +81,7 @@ async function runAllTests() {
     const categories = [
       'constants',
       'lib',
-      'routes', 
+      'routes',
       'durable-objects',
       'index',
       'deploy-safety'
