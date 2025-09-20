@@ -8,7 +8,7 @@ import NewMonthModal from './NewMonthModal';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-const Map = ({ user, visitedStates, setVisitedStates, gameKey, onBannedUser }) => {
+const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBannedUser }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNewMonthModal, setShowNewMonthModal] = useState(false);
@@ -18,6 +18,10 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, onBannedUser }) =
   useEffect(() => {
     localStorage.setItem('visitedStates', JSON.stringify(visitedStates));
   }, [visitedStates]);
+
+  useEffect(() => {
+    console.log('Map component received mapType:', mapType);
+  }, [mapType]);
 
   const handleStateClick = async (stateId) => {
     // If user is not logged in, show the login modal instead
@@ -163,6 +167,84 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, onBannedUser }) =
     }
   };
 
+  // Render different content based on mapType
+  if (mapType === 'US') {
+    return (
+      <div className="map-container">
+        <div className="header-content">
+          <div className="progress">Progress: {calculateProgress()}%</div>
+          <div className="game-description">
+            Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.
+          </div>
+        </div>
+        <ComposableMap projection="geoAlbersUsa" className="us-map">
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies.map((geo) => {
+                const isVisited = visitedStates.includes(geo.id);
+                const isAnimating = lastClickedState === geo.id;
+                return (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    onClick={() => handleStateClick(geo.id)}
+                    tabIndex={-1}
+                    style={{
+                      default: {
+                        fill: isVisited ? "#FF5722" : "#ECEFF1",
+                        stroke: "#FFF",
+                        strokeWidth: 0.5,
+                        transition: "all 0.3s ease",
+                        animation: isAnimating ? "pulse 1s ease-in-out" : "none",
+                        outline: "none",
+                      },
+                      hover: {
+                        fill: "#2196F3",
+                        stroke: "#FFF",
+                        strokeWidth: 0.5,
+                        cursor: "pointer",
+                        outline: "none",
+                      },
+                      pressed: {
+                        fill: isVisited ? "#FF5722" : "#ECEFF1",
+                        stroke: "#FFF",
+                        strokeWidth: 0.5,
+                        outline: "none",
+                      },
+                      active: {
+                        fill: isVisited ? "#FF5722" : "#ECEFF1",
+                        stroke: "#FFF",
+                        strokeWidth: 0.5,
+                        outline: "none",
+                      }
+                    }}
+                  />
+                );
+              })
+            }
+          </Geographies>
+        </ComposableMap>
+        <StateToggleList 
+          visitedStates={visitedStates} 
+          onStateClick={handleStateClickWithLogin}
+          gameKey={gameKey}
+        />
+        <LoginModal 
+          isOpen={showLoginModal} 
+          onClose={() => setShowLoginModal(false)} 
+        />
+        <NewMonthModal 
+          isOpen={showNewMonthModal}
+          onClose={handleNewMonthCancel}
+          onConfirm={handleNewMonthConfirm}
+          previousMonth={gameKey}
+          currentMonth={getCurrentMonthYear()}
+        />
+      </div>
+    );
+  }
+
+  // For non-US maps, show the map parameter value
   return (
     <div className="map-container">
       <div className="header-content">
@@ -170,59 +252,11 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, onBannedUser }) =
         <div className="game-description">
           Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.
         </div>
+        <div className="map-type-display">
+          <h2>Map Type: {mapType}</h2>
+          <p>This map type is not yet implemented. Current map parameter: {mapType}</p>
+        </div>
       </div>
-      <ComposableMap projection="geoAlbersUsa" className="us-map">
-        <Geographies geography={geoUrl}>
-          {({ geographies }) =>
-            geographies.map((geo) => {
-              const isVisited = visitedStates.includes(geo.id);
-              const isAnimating = lastClickedState === geo.id;
-              return (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  onClick={() => handleStateClick(geo.id)}
-                  tabIndex={-1}
-                  style={{
-                    default: {
-                      fill: isVisited ? "#FF5722" : "#ECEFF1",
-                      stroke: "#FFF",
-                      strokeWidth: 0.5,
-                      transition: "all 0.3s ease",
-                      animation: isAnimating ? "pulse 1s ease-in-out" : "none",
-                      outline: "none",
-                    },
-                    hover: {
-                      fill: "#2196F3",
-                      stroke: "#FFF",
-                      strokeWidth: 0.5,
-                      cursor: "pointer",
-                      outline: "none",
-                    },
-                    pressed: {
-                      fill: isVisited ? "#FF5722" : "#ECEFF1",
-                      stroke: "#FFF",
-                      strokeWidth: 0.5,
-                      outline: "none",
-                    },
-                    active: {
-                      fill: isVisited ? "#FF5722" : "#ECEFF1",
-                      stroke: "#FFF",
-                      strokeWidth: 0.5,
-                      outline: "none",
-                    }
-                  }}
-                />
-              );
-            })
-          }
-        </Geographies>
-      </ComposableMap>
-      <StateToggleList 
-        visitedStates={visitedStates} 
-        onStateClick={handleStateClickWithLogin}
-        gameKey={gameKey}
-      />
       <LoginModal 
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 

@@ -38,6 +38,10 @@ function AppContent() {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showBannedModal, setShowBannedModal] = useState(false);
   const [banData, setBanData] = useState(null);
+  const [mapType, setMapType] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('map') || 'US';
+  });
   const progressPercentage = ((visitedStates.length / 50) * 100).toFixed(2);
 
   useEffect(() => {
@@ -70,6 +74,20 @@ function AppContent() {
       navigate(redirectPath, { replace: true });
     }
   }, [location, navigate]);
+
+  useEffect(() => {
+    // Handle map parameter changes
+    const params = new URLSearchParams(location.search);
+    const mapParam = params.get('map');
+    if (mapParam) {
+      setMapType(mapParam);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    // Log map parameter on component mount
+    console.log('Map type from URL parameter:', mapType);
+  }, [mapType]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -228,6 +246,7 @@ function AppContent() {
               visitedStates={visitedStates} 
               setVisitedStates={setVisitedStates}
               gameKey={gameKey}
+              mapType={mapType}
               onBannedUser={(banData) => {
                 setBanData(banData);
                 setShowBannedModal(true);

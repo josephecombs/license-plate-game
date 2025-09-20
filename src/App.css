@@ -905,3 +905,27 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* Map type display styling */
+.map-type-display {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.map-type-display h2 {
+  color: #fff;
+  font-size: 2rem;
+  margin: 0 0 1rem 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.map-type-display p {
+  color: #f0f0f0;
+  font-size: 1.2rem;
+  margin: 0;
+  opacity: 0.9;
+}
