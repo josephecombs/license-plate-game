@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 import StateToggleList from './StateToggleList';
 import LoginModal from './LoginModal';
 import NewMonthModal from './NewMonthModal';
+import { CANADIAN_PROVINCES } from '../constants/states';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
@@ -210,13 +211,24 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
           <Geographies geography={realUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                const isVisited = visitedStates.includes(geo.id);
-                const isAnimating = lastClickedState === geo.id;
+                // console.log(geo.id);
+
+                let tempId = geo.id;
+                console.log({geo});
+
+                if (!tempId && geo.properties && geo.properties.name) {
+                  // Look up Canadian province ID from name
+                  // if (mapType === 'CAN') {
+                    tempId = CANADIAN_PROVINCES[geo.properties.name];
+                  // }
+                }
+                const isVisited = visitedStates.includes(tempId);
+                const isAnimating = lastClickedState === tempId;
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
-                    onClick={() => handleStateClick(geo.id)}
+                    onClick={() => handleStateClick(tempId)}
                     tabIndex={-1}
                     style={{
                       default: {
