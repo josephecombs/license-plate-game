@@ -75,6 +75,7 @@ function AppContent() {
     }
   }, [location, navigate]);
 
+
   useEffect(() => {
     // Handle map parameter changes
     const params = new URLSearchParams(location.search);

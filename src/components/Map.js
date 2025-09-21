@@ -8,6 +8,9 @@ import NewMonthModal from './NewMonthModal';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
+const canadaGeoUrl = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/canada.geojson";
+const mexicoGeoUrl = "https://raw.githubusercontent.com/open-mexico/mexico-geojson/master/mexico.geojson";
+
 const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBannedUser }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -168,7 +171,23 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
   };
 
   // Render different content based on mapType
-  if (mapType === 'US') {
+  if (mapType === 'US' || mapType === 'CAN' || mapType === 'MX') {
+
+    let realUrl = geoUrl;
+    let projection = "geoAlbersUsa";
+    let className = "us-map";
+
+     if (mapType === 'CAN') { 
+       realUrl = canadaGeoUrl;
+       projection = "geoConicEqualArea";
+       className = "canada-map";
+     }
+
+    if (mapType === 'MX') { 
+      realUrl = mexicoGeoUrl;
+      projection = "geoAlbersMexico";
+    }
+    
     return (
       <div className="map-container">
         <div className="header-content">
@@ -177,8 +196,17 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
             Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.
           </div>
         </div>
-        <ComposableMap projection="geoAlbersUsa" className="us-map">
-          <Geographies geography={geoUrl}>
+        <ComposableMap 
+          projection={projection} 
+          className={className}
+          projectionConfig={mapType === 'CAN' ? {
+            rotate: [96, 0, 0],     // central meridian ~96°W; north stays "up"
+            scale: 600,             // tune to taste
+            center: [-0, 45],     // shift center north to show more territories
+            parallels: [49, 80],   // extend north to show more territories
+          } : undefined}
+        >
+          <Geographies geography={realUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
                 const isVisited = visitedStates.includes(geo.id);
