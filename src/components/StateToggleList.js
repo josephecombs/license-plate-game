@@ -1,4 +1,5 @@
 import React from 'react';
+import CountryToggler from './CountryToggler';
 
 const US_STATES = [
   { name: 'Alabama', id: '01' },
@@ -55,10 +56,10 @@ const US_STATES = [
 ];
 
 // onStateClick handles login logic and toggling
-const StateToggleList = ({ visitedStates, onStateClick, gameKey }) => {
+const StateToggleList = ({ visitedStates, onStateClick, gameKey, mapType }) => {
   return (
     <div className="state-toggle-list">
-      <h2>State List</h2>
+      <CountryToggler currentMapType={mapType} />
       <div className="state-grid">
         {US_STATES.map((state) => {
           const isVisited = visitedStates.includes(state.id);

@@ -704,6 +704,90 @@
   font-size: 1.5rem;
 }
 
+/* Country Toggler Styles */
+.country-toggler {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+.country-toggler-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  justify-content: space-between;
+}
+
+.country-toggler-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.country-flag {
+  font-size: 1.2rem;
+}
+
+.country-name {
+  flex: 1;
+  text-align: left;
+}
+
+.dropdown-arrow {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.country-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(26, 28, 32, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  margin-top: 0.25rem;
+  overflow: hidden;
+}
+
+.country-option {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.country-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.country-option.active {
+  background: rgba(33, 150, 243, 0.2);
+  color: #64B5F6;
+}
+
+.country-option.active:hover {
+  background: rgba(33, 150, 243, 0.3);
+}
+
 .state-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -763,6 +847,25 @@
   .state-toggle-list {
     width: 100%;
     padding: 0rem;
+  }
+
+  .country-toggler-button {
+    min-width: 150px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .country-flag {
+    font-size: 1rem;
+  }
+
+  .country-dropdown {
+    margin-top: 0.125rem;
+  }
+
+  .country-option {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 
   .state-grid {

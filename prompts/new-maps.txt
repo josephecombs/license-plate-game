@@ -1,0 +1,17 @@
+I have a plan to implement the ability to log Canada and Mexico provinces and territories 
+
+steps:
+
+step 1: on the root url, support a map= param that can be in the url. the maps I want to support should be identified by abbreviation:
+
+US
+CAN
+MX
+
+NA (this will be all 3 displayed on the same map)
+
+this should be read from the url and set in the state of the high level component. for now just put the url param in state and log it on component mount
+
+step 2: have the thing actually respect the new query param. dont worry about showing the right crap for now. we can do that in a later step. for nonus, just render the param in the page so I know it works
+
+step 3: handle / render the canada and mexico maps only. north america will come last. do not write new css. the css we have for the US map is perfect and if we do inline shit just do the exact same inline shit to the MX and CA map

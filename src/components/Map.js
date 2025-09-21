@@ -257,6 +257,7 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
           visitedStates={visitedStates} 
           onStateClick={handleStateClickWithLogin}
           gameKey={gameKey}
+          mapType={mapType}
         />
         <LoginModal 
           isOpen={showLoginModal} 
