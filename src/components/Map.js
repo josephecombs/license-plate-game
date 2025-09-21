@@ -201,9 +201,10 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
           className={className}
           projectionConfig={mapType === 'CAN' ? {
             rotate: [96, 0, 0],     // central meridian ~96°W; north stays "up"
-            scale: 600,             // tune to taste
-            center: [-0, 45],     // shift center north to show more territories
+            scale: 800,             // tune to taste
+            center: [-0, 64],     // shift center north to show more territories
             parallels: [49, 80],   // extend north to show more territories
+            clipExtent: [[0, 0], [100, 500]]  // crop bottom empty space
           } : undefined}
         >
           <Geographies geography={realUrl}>
