@@ -10,7 +10,8 @@ import { CANADIAN_PROVINCES } from '../constants/states';
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
 const canadaGeoUrl = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/canada.geojson";
-const mexicoGeoUrl = "https://raw.githubusercontent.com/open-mexico/mexico-geojson/master/mexico.geojson";
+const mexicoGeoUrl = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/mexico.geojson";
+// const mexicoGeoUrl = "https://raw.githubusercontent.com/open-mexico/mexico-geojson/master/mexico.geojson";
 
 const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBannedUser }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
@@ -186,7 +187,26 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
 
     if (mapType === 'MX') { 
       realUrl = mexicoGeoUrl;
-      projection = "geoAlbersMexico";
+      projection = "geoConicEqualArea";
+      className = "mexico-map";
+    }
+
+    let pconfig;
+    if (mapType === 'CAN') {
+      pconfig = {
+        rotate: [96, 0, 0],     // central meridian ~96°W; north stays "up"
+        scale: 800,             // tune to taste
+        center: [-0, 64],     // shift center north to show more territories
+        parallels: [49, 80],   // extend north to show more territories
+        clipExtent: [[0, 0], [100, 500]]  // crop bottom empty space
+      }  
+    } else if (mapType === 'MX') {
+      pconfig = {
+        rotate: [102, 0, 0],     // central meridian ~102°W; north stays "up"
+        scale: 1500,             // tune to taste
+        center: [0, 24],        // shift center to better fit Mexico
+        parallels: [17, 32]      // adjust to fit Mexico's latitude range
+      }
     }
     
     return (
@@ -200,13 +220,7 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
         <ComposableMap 
           projection={projection} 
           className={className}
-          projectionConfig={mapType === 'CAN' ? {
-            rotate: [96, 0, 0],     // central meridian ~96°W; north stays "up"
-            scale: 800,             // tune to taste
-            center: [-0, 64],     // shift center north to show more territories
-            parallels: [49, 80],   // extend north to show more territories
-            clipExtent: [[0, 0], [100, 500]]  // crop bottom empty space
-          } : undefined}
+          projectionConfig={pconfig}
         >
           <Geographies geography={realUrl}>
             {({ geographies }) =>
@@ -219,9 +233,16 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
                 if (!tempId && geo.properties && geo.properties.name) {
                   // Look up Canadian province ID from name
                   // if (mapType === 'CAN') {
-                    tempId = CANADIAN_PROVINCES[geo.properties.name];
+                  tempId = CANADIAN_PROVINCES[geo.properties.name];
                   // }
                 }
+
+                if (!tempId && geo.properties && geo.properties.name) {
+                  // Look up Mexican province ID from name
+                  // tempId = MEXICAN_STATES[geo.properties.name];
+                }
+
+
                 const isVisited = visitedStates.includes(tempId);
                 const isAnimating = lastClickedState === tempId;
                 return (

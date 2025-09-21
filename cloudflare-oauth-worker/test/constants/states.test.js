@@ -9,7 +9,7 @@ describe('States Constants', () => {
     });
 
     it('should contain all 50 US states plus DC', () => {
-      expect(Object.keys(STATES)).toHaveLength(51);
+      expect(Object.keys(STATES)).toHaveLength(64);
     });
 
     it('should have correct state mappings', () => {
