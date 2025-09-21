@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const COUNTRIES = [
   { code: 'US', name: 'United States', flag: '🇺🇸' },
   { code: 'CAN', name: 'Canada', flag: '🇨🇦' },
-  { code: 'MX', name: 'Mexico', flag: '🇲🇽' }
+  // { code: 'MX', name: 'Mexico', flag: '🇲🇽' }
 ];
 
 const CountryToggler = ({ currentMapType }) => {
