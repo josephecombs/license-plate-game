@@ -21,7 +21,15 @@ const STATE_NAMES = {
 	'57': 'Alberta', '58': 'British Columbia', '59': 'Manitoba', '60': 'New Brunswick',
 	'61': 'Newfoundland and Labrador', '62': 'Northwest Territories', '63': 'Nova Scotia',
 	'64': 'Nunavut', '65': 'Ontario', '66': 'Prince Edward Island', '67': 'Quebec',
-	'68': 'Saskatchewan', '69': 'Yukon'
+	'68': 'Saskatchewan', '69': 'Yukon',
+	'70': 'Aguascalientes', '71': 'Baja California', '72': 'Baja California Sur',
+	'73': 'Campeche', '74': 'Chiapas', '75': 'Chihuahua', '76': 'Coahuila de Zaragoza',
+	'77': 'Colima', '78': 'Durango', '79': 'Guanajuato', '80': 'Guerrero', '81': 'Hidalgo',
+	'82': 'Jalisco', '83': 'México', '84': 'Distrito Federal', '85': 'Michoacán de Ocampo',
+	'86': 'Morelos', '87': 'Nayarit', '88': 'Nuevo León', '89': 'Oaxaca', '90': 'Puebla',
+	'91': 'Querétaro', '92': 'Quintana Roo', '93': 'San Luis Potosí', '94': 'Sinaloa',
+	'95': 'Sonora', '96': 'Tabasco', '97': 'Tamaulipas', '98': 'Tlaxcala',
+	'99': 'Veracruz de Ignacio de la Llave', '100': 'Yucatán', '101': 'Zacatecas'
 };
 
 function Reports() {

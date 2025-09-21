@@ -71,6 +71,42 @@ const CANADA_STATES = [
   { name: 'Yukon', id: '69' }
 ];
 
+const MEXICO_STATES = [
+  { name: 'Aguascalientes', id: '70' },
+  { name: 'Baja California', id: '71' },
+  { name: 'Baja California Sur', id: '72' },
+  { name: 'Campeche', id: '73' },
+  { name: 'Chiapas', id: '74' },
+  { name: 'Chihuahua', id: '75' },
+  { name: 'Coahuila de Zaragoza', id: '76' },
+  { name: 'Colima', id: '77' },
+  { name: 'Durango', id: '78' },
+  { name: 'Guanajuato', id: '79' },
+  { name: 'Guerrero', id: '80' },
+  { name: 'Hidalgo', id: '81' },
+  { name: 'Jalisco', id: '82' },
+  { name: 'México', id: '83' },
+  { name: 'Distrito Federal', id: '84' },
+  { name: 'Michoacán de Ocampo', id: '85' },
+  { name: 'Morelos', id: '86' },
+  { name: 'Nayarit', id: '87' },
+  { name: 'Nuevo León', id: '88' },
+  { name: 'Oaxaca', id: '89' },
+  { name: 'Puebla', id: '90' },
+  { name: 'Querétaro', id: '91' },
+  { name: 'Quintana Roo', id: '92' },
+  { name: 'San Luis Potosí', id: '93' },
+  { name: 'Sinaloa', id: '94' },
+  { name: 'Sonora', id: '95' },
+  { name: 'Tabasco', id: '96' },
+  { name: 'Tamaulipas', id: '97' },
+  { name: 'Tlaxcala', id: '98' },
+  { name: 'Veracruz de Ignacio de la Llave', id: '99' },
+  { name: 'Yucatán', id: '100' },
+  { name: 'Zacatecas', id: '101' }
+];
+
+
 // onStateClick handles login logic and toggling
 const StateToggleList = ({ visitedStates, onStateClick, gameKey, mapType }) => {
   let states = US_STATES;
@@ -79,9 +115,9 @@ const StateToggleList = ({ visitedStates, onStateClick, gameKey, mapType }) => {
     states = CANADA_STATES;
   }
 
-  // if (mapType === 'MX') {
-  //   states = MEXICO_STATES;
-  // }
+  if (mapType === 'MX') {
+    states = MEXICO_STATES;
+  }
 
   return (
     <div className="state-toggle-list">

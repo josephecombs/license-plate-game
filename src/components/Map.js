@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 import StateToggleList from './StateToggleList';
 import LoginModal from './LoginModal';
 import NewMonthModal from './NewMonthModal';
-import { CANADIAN_PROVINCES } from '../constants/states';
+import { CANADIAN_PROVINCES, MEXICAN_STATES } from '../constants/states';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
@@ -225,10 +225,10 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
           <Geographies geography={realUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                // console.log(geo.id);
+                console.log(geo.properties.name);
 
                 let tempId = geo.id;
-                console.log({geo});
+                // console.log({geo});
 
                 if (!tempId && geo.properties && geo.properties.name) {
                   // Look up Canadian province ID from name
@@ -239,7 +239,7 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
 
                 if (!tempId && geo.properties && geo.properties.name) {
                   // Look up Mexican province ID from name
-                  // tempId = MEXICAN_STATES[geo.properties.name];
+                  tempId = MEXICAN_STATES[geo.properties.name];
                 }
 
 
