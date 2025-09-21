@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 import StateToggleList from './StateToggleList';
 import LoginModal from './LoginModal';
 import NewMonthModal from './NewMonthModal';
+import FlagOnlyDropdown from './FlagOnlyDropdown';
 import { CANADIAN_PROVINCES, MEXICAN_STATES } from '../constants/states';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
@@ -216,6 +217,7 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
           <div className="game-description">
             Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.
           </div>
+          <FlagOnlyDropdown currentMapType={mapType} />
         </div>
         <ComposableMap 
           projection={projection} 
@@ -315,6 +317,7 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
         <div className="game-description">
           Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.
         </div>
+        <FlagOnlyDropdown currentMapType={mapType} />
         <div className="map-type-display">
           <h2>Map Type: {mapType}</h2>
           <p>This map type is not yet implemented. Current map parameter: {mapType}</p>

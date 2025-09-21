@@ -711,6 +711,79 @@
   margin-bottom: 1.5rem;
 }
 
+/* Flag Only Dropdown Styles */
+.flag-only-dropdown {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.flag-only-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  min-width: 60px;
+  justify-content: space-between;
+}
+
+.flag-only-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.flag-emoji {
+  font-size: 1.2rem;
+}
+
+.flag-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: rgba(26, 28, 32, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.flag-option {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  transition: background-color 0.2s ease;
+  font-size: 1rem;
+}
+
+.flag-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.flag-option.active {
+  background: rgba(33, 150, 243, 0.2);
+}
+
+.flag-option.active:hover {
+  background: rgba(33, 150, 243, 0.3);
+}
+
 .country-toggler-button {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
