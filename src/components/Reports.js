@@ -17,7 +17,11 @@ const STATE_NAMES = {
 	'37': 'North Carolina', '38': 'North Dakota', '39': 'Ohio', '40': 'Oklahoma',
 	'41': 'Oregon', '42': 'Pennsylvania', '44': 'Rhode Island', '45': 'South Carolina',
 	'46': 'South Dakota', '47': 'Tennessee', '48': 'Texas', '49': 'Utah', '50': 'Vermont',
-	'51': 'Virginia', '53': 'Washington', '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming'
+	'51': 'Virginia', '53': 'Washington', '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming',
+	'57': 'Alberta', '58': 'British Columbia', '59': 'Manitoba', '60': 'New Brunswick',
+	'61': 'Newfoundland and Labrador', '62': 'Northwest Territories', '63': 'Nova Scotia',
+	'64': 'Nunavut', '65': 'Ontario', '66': 'Prince Edward Island', '67': 'Quebec',
+	'68': 'Saskatchewan', '69': 'Yukon'
 };
 
 function Reports() {

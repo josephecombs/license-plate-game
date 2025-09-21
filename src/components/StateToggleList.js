@@ -55,13 +55,39 @@ const US_STATES = [
   { name: 'Wyoming', id: '56' }
 ];
 
+const CANADA_STATES = [
+  { name: 'Alberta', id: '57' },
+  { name: 'British Columbia', id: '58' },
+  { name: 'Manitoba', id: '59' },
+  { name: 'New Brunswick', id: '60' },
+  { name: 'Newfoundland and Labrador', id: '61' },
+  { name: 'Northwest Territories', id: '62' },
+  { name: 'Nova Scotia', id: '63' },
+  { name: 'Nunavut', id: '64' },
+  { name: 'Ontario', id: '65' },
+  { name: 'Prince Edward Island', id: '66' },
+  { name: 'Quebec', id: '67' },
+  { name: 'Saskatchewan', id: '68' },
+  { name: 'Yukon', id: '69' }
+];
+
 // onStateClick handles login logic and toggling
 const StateToggleList = ({ visitedStates, onStateClick, gameKey, mapType }) => {
+  let states = US_STATES;
+
+  if (mapType === 'CAN') {
+    states = CANADA_STATES;
+  }
+
+  // if (mapType === 'MX') {
+  //   states = MEXICO_STATES;
+  // }
+
   return (
     <div className="state-toggle-list">
       <CountryToggler currentMapType={mapType} />
       <div className="state-grid">
-        {US_STATES.map((state) => {
+        {states.map((state) => {
           const isVisited = visitedStates.includes(state.id);
           return (
             <button

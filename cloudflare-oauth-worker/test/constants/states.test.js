@@ -18,6 +18,7 @@ describe('States Constants', () => {
       expect(STATES['NY']).toBe('New York');
       expect(STATES['TX']).toBe('Texas');
       expect(STATES['DC']).toBe('District of Columbia');
+      expect(STATES['YT']).toBe('Yukon');
     });
 
     it('should have consistent format (2-letter codes to full names)', () => {
