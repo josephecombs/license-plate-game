@@ -14,7 +14,7 @@ const canadaGeoUrl = "https://raw.githubusercontent.com/codeforamerica/click_tha
 const mexicoGeoUrl = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/mexico.geojson";
 // const mexicoGeoUrl = "https://raw.githubusercontent.com/open-mexico/mexico-geojson/master/mexico.geojson";
 
-const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBannedUser }) => {
+const Map = ({ user, visitedStates, setVisitedStates, gameKey, setGameKey, mapType, onBannedUser }) => {
   const [lastClickedState, setLastClickedState] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNewMonthModal, setShowNewMonthModal] = useState(false);
@@ -28,6 +28,12 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
   useEffect(() => {
     console.log('Map component received mapType:', mapType);
   }, [mapType]);
+
+  useEffect(() => {
+    console.log('Map component received gameKey:', gameKey);
+    console.log('Current month-year:', getCurrentMonthYear());
+    console.log('GameKey matches current month:', gameKey === getCurrentMonthYear());
+  }, [gameKey]);
 
   const handleStateClick = async (stateId) => {
     // If user is not logged in, show the login modal instead
@@ -120,6 +126,12 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
     setVisitedStates([]);
     localStorage.removeItem('visitedStates');
     localStorage.removeItem('gameKey');
+    
+    // Update gameKey to current month-year
+    const currentMonthYear = getCurrentMonthYear();
+    setGameKey(currentMonthYear);
+    localStorage.setItem('gameKey', currentMonthYear);
+    console.log('Updated gameKey to current month:', currentMonthYear);
     
     // Close modal and clear pending state
     setShowNewMonthModal(false);
@@ -227,7 +239,7 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, mapType, onBanned
           <Geographies geography={realUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                console.log(geo.properties.name);
+                // console.log(geo.properties.name);
 
                 let tempId = geo.id;
                 // console.log({geo});

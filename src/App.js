@@ -145,7 +145,7 @@ function AppContent() {
         }
         
         // Store gameKey if it exists in the response
-        if (data.gameKey !== undefined) {
+        if (data.gameKey !== undefined && data.visitedStates && data.visitedStates.length > 0) {
           setGameKey(data.gameKey);
           localStorage.setItem('gameKey', data.gameKey);
         }
@@ -247,6 +247,7 @@ function AppContent() {
               visitedStates={visitedStates} 
               setVisitedStates={setVisitedStates}
               gameKey={gameKey}
+              setGameKey={setGameKey}
               mapType={mapType}
               onBannedUser={(banData) => {
                 setBanData(banData);
