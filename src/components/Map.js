@@ -178,6 +178,17 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, setGameKey, mapTy
     }
   };
 
+  // Debug function to manually set gameKey to prior month/year
+  const handleDebugGameKeyChange = () => {
+    const currentDate = new Date();
+    const priorMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const priorMonthYear = priorMonth.toLocaleString('default', { month: 'long' }) + '-' + priorMonth.getFullYear();
+    
+    console.log('🐛 DEBUG: Setting gameKey to prior month:', priorMonthYear);
+    setGameKey(priorMonthYear);
+    alert(`Game key set to: ${priorMonthYear}`);
+  };
+
   // Render different content based on mapType
   if (mapType === 'US' || mapType === 'CAN' || mapType === 'MX') {
 
@@ -223,6 +234,36 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, setGameKey, mapTy
             Welcome to Plate Chase! Click on states as you spot their license plates on the road. Your progress is automatically saved, and you can sync across devices by signing in.
           </div>
           <FlagOnlyDropdown currentMapType={mapType} />
+          {/* Debug button for joseph.e.combs@gmail.com */}
+          {user && user.email === 'joseph.e.combs@gmail.com' && (
+            <div style={{ marginTop: '20px', textAlign: 'center' }}>
+              <button
+                onClick={handleDebugGameKeyChange}
+                style={{
+                  backgroundColor: '#ff4444',
+                  color: 'white',
+                  border: 'none',
+                  padding: '15px 30px',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.backgroundColor = '#cc0000';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.backgroundColor = '#ff4444';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >
+                🐛 DEBUG: Manually Set GameKey to Prior Month/Year
+              </button>
+            </div>
+          )}
         </div>
         <ComposableMap 
           projection={projection} 

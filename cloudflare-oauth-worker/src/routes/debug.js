@@ -1,5 +1,5 @@
 import { getCurrentMonthYear } from '../lib/utils.js';
-import { validateSession, isAdmin } from '../lib/auth.js';
+import { validateSession, isAdmin, getEmailFromSessionToken } from '../lib/auth.js';
 
 /**
  * Debug and testing routes
