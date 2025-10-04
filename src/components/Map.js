@@ -21,9 +21,6 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, setGameKey, mapTy
   const [pendingStateChange, setPendingStateChange] = useState(null);
 
 
-  useEffect(() => {
-    localStorage.setItem('visitedStates', JSON.stringify(visitedStates));
-  }, [visitedStates]);
 
   useEffect(() => {
     console.log('Map component received mapType:', mapType);
@@ -122,15 +119,12 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, setGameKey, mapTy
 
   // Handle new month modal actions
   const handleNewMonthConfirm = () => {
-    // Clear game state and localStorage
+    // Clear game state
     setVisitedStates([]);
-    localStorage.removeItem('visitedStates');
-    localStorage.removeItem('gameKey');
     
     // Update gameKey to current month-year
     const currentMonthYear = getCurrentMonthYear();
     setGameKey(currentMonthYear);
-    localStorage.setItem('gameKey', currentMonthYear);
     console.log('Updated gameKey to current month:', currentMonthYear);
     
     // Close modal and clear pending state
@@ -141,7 +135,6 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, setGameKey, mapTy
     if (pendingStateChange) {
       const newVisitedStates = [pendingStateChange];
       setVisitedStates(newVisitedStates);
-      localStorage.setItem('visitedStates', JSON.stringify(newVisitedStates));
       
       // Send to server
       sendStateToServer(newVisitedStates);

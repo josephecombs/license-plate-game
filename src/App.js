@@ -25,14 +25,8 @@ function AppContent() {
   const menuRef = useRef(null);
   const sessionId = Cookies.get('session');
   const [gameState, setGameState] = useState(null);
-  const [visitedStates, setVisitedStates] = useState(() => {
-    const saved = localStorage.getItem('visitedStates');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [gameKey, setGameKey] = useState(() => {
-    const saved = localStorage.getItem('gameKey');
-    return saved || null;
-  });
+  const [visitedStates, setVisitedStates] = useState([]);
+  const [gameKey, setGameKey] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [showTooltip, setShowTooltip] = useState(false);
@@ -141,13 +135,11 @@ function AppContent() {
         if (data.visitedStates !== undefined) {
           const serverVisitedStates = data.visitedStates ?? [];
           setVisitedStates(serverVisitedStates);
-          localStorage.setItem('visitedStates', JSON.stringify(serverVisitedStates));
         }
         
         // Store gameKey if it exists in the response
         if (data.gameKey !== undefined && data.visitedStates && data.visitedStates.length > 0) {
           setGameKey(data.gameKey);
-          localStorage.setItem('gameKey', data.gameKey);
         }
       })
       .catch(error => console.error('Error fetching game state:', error));
@@ -195,7 +187,6 @@ function AppContent() {
                 } else {
                   Cookies.remove('session');
                 }
-                localStorage.clear();
                 setUser(null);
                 window.location.reload();
               }}
