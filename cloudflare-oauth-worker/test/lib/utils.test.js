@@ -159,11 +159,13 @@ describe('Utils Library', () => {
 
   describe('getCurrentMonthYear', () => {
     describe('happy path', () => {
-      it('should return current month and year', () => {
+      it('should return current month and year in US East timezone', () => {
         const result = getCurrentMonthYear();
         const now = new Date();
-        const expectedMonth = now.toLocaleString('default', { month: 'long' });
-        const expectedYear = now.getFullYear();
+        // Convert to US East timezone (America/New_York) to match the function behavior
+        const eastTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        const expectedMonth = eastTime.toLocaleString('default', { month: 'long' });
+        const expectedYear = eastTime.getFullYear();
         const expected = `${expectedMonth}-${expectedYear}`;
         
         expect(result).toBe(expected);

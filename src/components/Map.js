@@ -181,7 +181,9 @@ const Map = ({ user, visitedStates, setVisitedStates, gameKey, setGameKey, mapTy
   // Debug function to manually set gameKey to prior month/year
   const handleDebugGameKeyChange = () => {
     const currentDate = new Date();
-    const priorMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    // Convert to US East timezone (America/New_York) for consistency
+    const eastTime = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const priorMonth = new Date(eastTime.getFullYear(), eastTime.getMonth() - 1, 1);
     const priorMonthYear = priorMonth.toLocaleString('default', { month: 'long' }) + '-' + priorMonth.getFullYear();
     
     console.log('🐛 DEBUG: Setting gameKey to prior month:', priorMonthYear);

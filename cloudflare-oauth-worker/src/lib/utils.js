@@ -45,5 +45,8 @@ export function anonymizeEmail(email) {
  * Get current month-year string for game data organization
  */
 export function getCurrentMonthYear() {
-	return new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+	const now = new Date();
+	// Convert to US East timezone (America/New_York)
+	const eastTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+	return eastTime.toLocaleString('default', { month: 'long' }) + '-' + eastTime.getFullYear();
 }

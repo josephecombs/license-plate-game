@@ -15,7 +15,10 @@ export const API_BASE_URL = process.env.NODE_ENV === 'production'
 
 // Get current month-year string for game data organization (matches server logic)
 export const getCurrentMonthYear = () => {
-  return new Date().toLocaleString('default', { month: 'long' }) + '-' + new Date().getFullYear();
+  const now = new Date();
+  // Convert to US East timezone (America/New_York)
+  const eastTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+  return eastTime.toLocaleString('default', { month: 'long' }) + '-' + eastTime.getFullYear();
 };
 
 function AppContent() {
