@@ -81,7 +81,10 @@ export async function sendStateChangeEmail(env, userEmail, userName, action, sta
 	}
 
 	const stateName = STATE_NAMES[stateId] || stateId;
-	const timestamp = new Date().toLocaleString();
+	// Convert to US East timezone (America/New_York) for consistency with other parts of the app
+	const now = new Date();
+	const eastTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+	const timestamp = eastTime.toLocaleString();
 	const previousCount = previousStates.length;
 	const newCount = newStates.length;
 	

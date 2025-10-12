@@ -195,5 +195,35 @@ describe('Email Library', () => {
         'not-an-array' // invalid newStates
       )).rejects.toThrow('Invalid parameters');
     });
+
+    it('should format timestamp in US Eastern Time', async () => {
+      const notify = vi.fn().mockResolvedValue(true);
+      
+      // Mock a specific date to test timezone conversion
+      const mockDate = new Date('2025-01-15T17:30:44.000Z'); // 12:30:44 PM EST
+      vi.useFakeTimers();
+      vi.setSystemTime(mockDate);
+      
+      await sendStateChangeEmail(
+        mockEnv,
+        'user@example.com',
+        'Test User',
+        'ADDED',
+        '08', // Colorado
+        ['01', '02', '03', '04', '05'], // 5 previous states
+        ['01', '02', '03', '04', '05', '08'], // 6 new states
+        notify // Pass the mock function
+      );
+
+      // Check that the email body contains a timestamp in Eastern Time
+      const emailCall = notify.mock.calls[0];
+      const emailBody = emailCall[4]; // The body parameter
+      
+      // The timestamp should show Eastern Time (12:30:44 PM, not 5:30:44 PM UTC)
+      expect(emailBody).toContain('12:30:44 PM');
+      expect(emailBody).toContain('Timestamp: 1/15/2025, 12:30:44 PM');
+      
+      vi.useRealTimers();
+    });
   });
 });
