@@ -529,7 +529,8 @@
 }
 
 .privacy-policy,
-.terms-of-service {
+.terms-of-service,
+.data-deletion {
   max-width: 800px;
   margin: 2rem auto;
   padding: 2rem;
@@ -540,37 +541,43 @@
 }
 
 .privacy-policy h1,
-.terms-of-service h1 {
+.terms-of-service h1,
+.data-deletion h1 {
   color: #282c34;
   margin-bottom: 1rem;
 }
 
 .privacy-policy section,
-.terms-of-service section {
+.terms-of-service section,
+.data-deletion section {
   margin-bottom: 2rem;
 }
 
 .privacy-policy h2,
-.terms-of-service h2 {
+.terms-of-service h2,
+.data-deletion h2 {
   color: #282c34;
   margin-bottom: 1rem;
 }
 
 .privacy-policy p,
-.terms-of-service p {
+.terms-of-service p,
+.data-deletion p {
   color: #333;
   line-height: 1.6;
   margin-bottom: 1rem;
 }
 
 .privacy-policy ul,
-.terms-of-service ul {
+.terms-of-service ul,
+.data-deletion ul {
   margin-left: 2rem;
   margin-bottom: 1rem;
 }
 
 .privacy-policy li,
-.terms-of-service li {
+.terms-of-service li,
+.data-deletion li {
   color: #333;
   line-height: 1.6;
   margin-bottom: 0.5rem;

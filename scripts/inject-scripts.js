@@ -5,6 +5,7 @@ const path = require('path');
 const staticPages = [
   'privacy-policy.html',
   'terms-of-service.html',
+  'data-deletion.html',
   'reports.html',
   '404.html'
 ];

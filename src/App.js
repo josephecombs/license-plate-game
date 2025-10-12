@@ -4,6 +4,7 @@ import Map from './components/Map';
 import OAuthButton from './components/OAuthButton';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
+import DataDeletion from './components/DataDeletion';
 import Reports from './components/Reports';
 import BannedUserModal from './components/BannedUserModal';
 import './App.css';
@@ -252,6 +253,7 @@ function AppContent() {
         } />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/data-deletion" element={<DataDeletion />} />
         <Route path="/reports" element={<Reports />} />
       </Routes>
       <BannedUserModal
