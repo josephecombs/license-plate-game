@@ -4,7 +4,7 @@ function FacebookButton({ isMobile }) {
   const isLocal = process.env.NODE_ENV === 'development';
   const redirectUri = isLocal ? 'http://localhost:8787/sessions/new' : 'https://api.platechase.com/sessions/new';
   const clientId = '25193055553659682'; // Facebook App ID
-  const oauthUrl = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email`;
+  const oauthUrl = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email,public_profile`;
 
   const handleClick = () => {
     window.location.href = oauthUrl;
