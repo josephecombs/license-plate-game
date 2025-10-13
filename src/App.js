@@ -7,6 +7,7 @@ import TermsOfService from './components/TermsOfService';
 import DataDeletion from './components/DataDeletion';
 import Reports from './components/Reports';
 import BannedUserModal from './components/BannedUserModal';
+import LoginPage from './components/LoginPage';
 import './App.css';
 import Cookies from 'js-cookie';
 
@@ -251,6 +252,7 @@ function AppContent() {
             />
           </header>
         } />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/data-deletion" element={<DataDeletion />} />

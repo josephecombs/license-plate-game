@@ -7,6 +7,7 @@ const staticPages = [
   'terms-of-service.html',
   'data-deletion.html',
   'reports.html',
+  'login.html',
   '404.html'
 ];
 
