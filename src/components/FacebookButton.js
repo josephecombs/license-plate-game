@@ -2,11 +2,12 @@ import React from 'react';
 
 function FacebookButton({ isMobile }) {
   const isLocal = process.env.NODE_ENV === 'development';
-  const redirectUri = isLocal ? 'http://localhost:8787/sessions/new' : 'https://api.platechase.com/sessions/new';
+  const redirectUri = isLocal ? 'http://localhost:8787/sessions/facebook' : 'https://api.platechase.com/sessions/facebook';
   const clientId = '25193055553659682'; // Facebook App ID
   const oauthUrl = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email,public_profile`;
 
   const handleClick = () => {
+    console.log('🔗 Redirecting to Facebook OAuth URL:', oauthUrl);
     window.location.href = oauthUrl;
   };
 

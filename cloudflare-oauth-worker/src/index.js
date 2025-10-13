@@ -10,7 +10,7 @@ export { Game } from './durable-objects/Game.js';
 export { UserSession } from './userSession.js';
 
 // Import route handlers
-import { handleOAuth, handleSessionValidation } from './routes/auth.js';
+import { handleOAuth, handleSessionValidation, handleFacebookOAuth } from './routes/auth.js';
 import { handleGetGame, handlePutGame } from './routes/game.js';
 import { handleBanUser, handleUnbanUser } from './routes/users.js';
 import { handleReports } from './routes/reports.js';
@@ -60,6 +60,10 @@ export default {
 		// Route requests to appropriate handlers
 		if (url.pathname === '/sessions/new') {
 			response = await handleOAuth(request, env, url);
+			// OAuth doesn't need CORS - return response directly
+			return response;
+		} else if (url.pathname === '/sessions/facebook') {
+			response = await handleFacebookOAuth(request, env, url);
 			// OAuth doesn't need CORS - return response directly
 			return response;
 		} else if (url.pathname === '/validate-session') {
